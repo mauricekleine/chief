@@ -1,7 +1,8 @@
-import { existsSync } from "fs";
-import { join } from "path";
-import { isGitRepo, getGitRoot } from "../lib/git";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
 import { ensureChiefDir, setCurrentWorktree } from "../lib/config";
+import { getGitRoot, isGitRepo } from "../lib/git";
 
 export async function useCommand(args: string[]): Promise<void> {
   if (args.length === 0) {
@@ -13,7 +14,7 @@ export async function useCommand(args: string[]): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -25,7 +26,7 @@ export async function useCommand(args: string[]): Promise<void> {
 
   if (!existsSync(worktreePath)) {
     throw new Error(
-      `Worktree not found: ${worktreeName}\n\nRun \`chief worktrees\` to see available worktrees.`
+      `Worktree not found: ${worktreeName}\n\nRun \`chief worktrees\` to see available worktrees.`,
     );
   }
 

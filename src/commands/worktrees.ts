@@ -1,12 +1,12 @@
-import { isGitRepo, getGitRoot, listWorktreeDirectories } from "../lib/git";
-import { readTasks, getTaskStats } from "../lib/tasks";
 import { ensureChiefDir, getCurrentWorktree } from "../lib/config";
+import { getGitRoot, isGitRepo, listWorktreeDirectories } from "../lib/git";
+import { getTaskStats, readTasks } from "../lib/tasks";
 
-export async function worktreesCommand(_args: string[]): Promise<void> {
+export async function worktreesCommand(): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -31,8 +31,8 @@ export async function worktreesCommand(_args: string[]): Promise<void> {
   for (const wt of worktrees) {
     const isCurrent = currentWorktree === wt.path;
     const marker = isCurrent ? " [current]" : "";
-    const highlight = isCurrent ? "\x1b[36m" : "";
-    const reset = isCurrent ? "\x1b[0m" : "";
+    const highlight = isCurrent ? "\u001B[36m" : "";
+    const reset = isCurrent ? "\u001B[0m" : "";
 
     // Try to get task stats
     let progressStr = "";

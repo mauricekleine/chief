@@ -1,6 +1,7 @@
-import { existsSync } from "fs";
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import type { ChiefConfig } from "../types";
 
 const CONFIG_FILE = "config.json";
@@ -32,7 +33,7 @@ export async function ensureWorktreesDir(chiefDir: string): Promise<string> {
  * Ensure the .chief directory exists within a worktree.
  */
 export async function ensureWorktreeChiefDir(
-  worktreePath: string
+  worktreePath: string,
 ): Promise<string> {
   const chiefDir = join(worktreePath, ".chief");
   if (!existsSync(chiefDir)) {
@@ -51,7 +52,7 @@ export async function getConfig(chiefDir: string): Promise<ChiefConfig> {
     return {};
   }
 
-  const content = await readFile(configPath, "utf-8");
+  const content = await readFile(configPath, "utf8");
   return JSON.parse(content) as ChiefConfig;
 }
 
@@ -60,17 +61,17 @@ export async function getConfig(chiefDir: string): Promise<ChiefConfig> {
  */
 export async function setConfig(
   chiefDir: string,
-  config: ChiefConfig
+  config: ChiefConfig,
 ): Promise<void> {
   const configPath = join(chiefDir, CONFIG_FILE);
-  await writeFile(configPath, JSON.stringify(config, null, 2));
+  await writeFile(configPath, JSON.stringify(config, undefined, 2));
 }
 
 /**
  * Get the current worktree path from config.
  */
 export async function getCurrentWorktree(
-  chiefDir: string
+  chiefDir: string,
 ): Promise<string | undefined> {
   const config = await getConfig(chiefDir);
   return config.currentWorktree;
@@ -81,7 +82,7 @@ export async function getCurrentWorktree(
  */
 export async function setCurrentWorktree(
   chiefDir: string,
-  worktreePath: string
+  worktreePath: string,
 ): Promise<void> {
   const config = await getConfig(chiefDir);
   config.currentWorktree = worktreePath;
@@ -92,7 +93,7 @@ export async function setCurrentWorktree(
  * Get the verification steps from .chief/verification.txt.
  */
 export async function getVerificationSteps(
-  chiefDir: string
+  chiefDir: string,
 ): Promise<string | undefined> {
   const verificationPath = join(chiefDir, VERIFICATION_FILE);
 
@@ -100,7 +101,7 @@ export async function getVerificationSteps(
     return undefined;
   }
 
-  const content = await readFile(verificationPath, "utf-8");
+  const content = await readFile(verificationPath, "utf8");
   return content.trim() || undefined;
 }
 
@@ -109,7 +110,7 @@ export async function getVerificationSteps(
  */
 export async function setVerificationSteps(
   chiefDir: string,
-  steps: string
+  steps: string,
 ): Promise<void> {
   const verificationPath = join(chiefDir, VERIFICATION_FILE);
   await writeFile(verificationPath, steps);

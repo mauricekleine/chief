@@ -1,6 +1,7 @@
-import { existsSync } from "fs";
-import { readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import type { Task } from "../types";
 
 /**
@@ -13,7 +14,7 @@ export async function readTasks(worktreePath: string): Promise<Task[]> {
     return [];
   }
 
-  const content = await readFile(tasksPath, "utf-8");
+  const content = await readFile(tasksPath, "utf8");
   return JSON.parse(content) as Task[];
 }
 
@@ -27,7 +28,10 @@ export function hasPendingTasks(tasks: Task[]): boolean {
 /**
  * Get task completion statistics.
  */
-export function getTaskStats(tasks: Task[]): { completed: number; total: number } {
+export function getTaskStats(tasks: Task[]): {
+  completed: number;
+  total: number;
+} {
   const completed = tasks.filter((task) => task.passes).length;
   return { completed, total: tasks.length };
 }
@@ -38,35 +42,35 @@ export function getTaskStats(tasks: Task[]): { completed: number; total: number 
 export function getTaskSchema(): object {
   return {
     $schema: "http://json-schema.org/draft-07/schema#",
-    title: "Tasks",
-    type: "array",
     items: {
-      type: "object",
+      additionalProperties: false,
       properties: {
         category: {
-          type: "string",
           description: "The category of the task",
+          type: "string",
         },
         description: {
-          type: "string",
           description: "A detailed description of the task",
+          type: "string",
         },
         passes: {
-          type: "boolean",
-          description: "Indicates if the task has passed or is completed",
           default: false,
+          description: "Indicates if the task has passed or is completed",
+          type: "boolean",
         },
         steps: {
-          type: "array",
           description: "A list of steps to complete the task",
           items: {
             type: "string",
           },
+          type: "array",
         },
       },
       required: ["category", "description", "passes", "steps"],
-      additionalProperties: false,
+      type: "object",
     },
+    title: "Tasks",
+    type: "array",
   };
 }
 
@@ -75,5 +79,5 @@ export function getTaskSchema(): object {
  */
 export async function writeTaskSchema(chiefDir: string): Promise<void> {
   const schemaPath = join(chiefDir, "tasks.schema.json");
-  await writeFile(schemaPath, JSON.stringify(getTaskSchema(), null, 2));
+  await writeFile(schemaPath, JSON.stringify(getTaskSchema(), undefined, 2));
 }

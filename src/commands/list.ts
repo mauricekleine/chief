@@ -1,14 +1,15 @@
-import { existsSync } from "fs";
-import { basename } from "path";
-import { isGitRepo, getGitRoot } from "../lib/git";
-import { readTasks, getTaskStats } from "../lib/tasks";
-import { ensureChiefDir, getCurrentWorktree } from "../lib/config";
+import { existsSync } from "node:fs";
+import { basename } from "node:path";
 
-export async function listCommand(_args: string[]): Promise<void> {
+import { ensureChiefDir, getCurrentWorktree } from "../lib/config";
+import { getGitRoot, isGitRepo } from "../lib/git";
+import { getTaskStats, readTasks } from "../lib/tasks";
+
+export async function listCommand(): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -20,7 +21,7 @@ export async function listCommand(_args: string[]): Promise<void> {
 
   if (!worktreePath) {
     throw new Error(
-      "No current worktree. Run `chief new <name>` or `chief use <name>` first."
+      "No current worktree. Run `chief new <name>` or `chief use <name>` first.",
     );
   }
 
@@ -43,11 +44,10 @@ export async function listCommand(_args: string[]): Promise<void> {
   console.log(`Progress: ${stats.completed}/${stats.total} completed\n`);
   console.log("─".repeat(80));
 
-  for (let i = 0; i < tasks.length; i++) {
-    const task = tasks[i];
+  for (const [i, task] of tasks.entries()) {
     const status = task.passes ? "✓" : "○";
-    const statusColor = task.passes ? "\x1b[32m" : "\x1b[33m";
-    const reset = "\x1b[0m";
+    const statusColor = task.passes ? "\u001B[32m" : "\u001B[33m";
+    const reset = "\u001B[0m";
 
     // Truncate description if too long
     const maxDescLen = 60;
@@ -57,7 +57,7 @@ export async function listCommand(_args: string[]): Promise<void> {
         : task.description;
 
     console.log(
-      `${statusColor}${status}${reset} [${i + 1}] ${task.category}: ${desc}`
+      `${statusColor}${status}${reset} [${i + 1}] ${task.category}: ${desc}`,
     );
     console.log(`     Steps: ${task.steps.length}`);
   }

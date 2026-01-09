@@ -10,9 +10,9 @@ export interface ChiefConfig {
 }
 
 export interface WorktreeInfo {
+  createdAt: Date;
   name: string;
   path: string;
-  createdAt: Date;
   taskProgress?: {
     completed: number;
     total: number;

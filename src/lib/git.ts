@@ -1,7 +1,8 @@
+import { existsSync } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
+import { join } from "node:path";
+
 import { $ } from "bun";
-import { existsSync } from "fs";
-import { readdir, stat } from "fs/promises";
-import { join } from "path";
 
 /**
  * Check if the current directory is a git repository.
@@ -28,7 +29,7 @@ export async function getCurrentBranch(): Promise<string> {
  */
 export async function createWorktree(
   worktreePath: string,
-  branchName: string
+  branchName: string,
 ): Promise<void> {
   await $`git worktree add ${worktreePath} -b ${branchName}`;
 }
@@ -44,8 +45,8 @@ export async function removeWorktree(worktreePath: string): Promise<void> {
  * List all worktrees in .chief/worktrees/
  */
 export async function listWorktreeDirectories(
-  chiefDir: string
-): Promise<{ name: string; path: string; createdAt: Date }[]> {
+  chiefDir: string,
+): Promise<{ createdAt: Date; name: string; path: string }[]> {
   const worktreesDir = join(chiefDir, "worktrees");
 
   if (!existsSync(worktreesDir)) {
@@ -53,22 +54,22 @@ export async function listWorktreeDirectories(
   }
 
   const entries = await readdir(worktreesDir, { withFileTypes: true });
-  const worktrees: { name: string; path: string; createdAt: Date }[] = [];
+  const worktrees: { createdAt: Date; name: string; path: string }[] = [];
 
   for (const entry of entries) {
     if (entry.isDirectory()) {
       const fullPath = join(worktreesDir, entry.name);
       const stats = await stat(fullPath);
       worktrees.push({
+        createdAt: stats.birthtime,
         name: entry.name,
         path: fullPath,
-        createdAt: stats.birthtime,
       });
     }
   }
 
-  return worktrees.sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  return worktrees.toSorted(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
 }
 
@@ -97,8 +98,8 @@ export async function isChiefIgnored(gitRoot: string): Promise<boolean> {
     return false;
   }
 
-  const { readFile } = await import("fs/promises");
-  const content = await readFile(gitignorePath, "utf-8");
+  const { readFile } = await import("node:fs/promises");
+  const content = await readFile(gitignorePath, "utf8");
   const lines = content.split("\n").map((line) => line.trim());
 
   return lines.some((line) => line === ".chief" || line === ".chief/");
@@ -113,11 +114,11 @@ export async function ensureChiefInGitignore(gitRoot: string): Promise<void> {
   }
 
   const gitignorePath = join(gitRoot, ".gitignore");
-  const { readFile, writeFile } = await import("fs/promises");
+  const { readFile, writeFile } = await import("node:fs/promises");
 
   let content = "";
   if (existsSync(gitignorePath)) {
-    content = await readFile(gitignorePath, "utf-8");
+    content = await readFile(gitignorePath, "utf8");
     if (!content.endsWith("\n")) {
       content += "\n";
     }

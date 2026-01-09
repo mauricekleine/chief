@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
 
-import { newCommand } from "./commands/new";
-import { listCommand } from "./commands/list";
-import { runCommand } from "./commands/run";
-import { worktreesCommand } from "./commands/worktrees";
-import { useCommand } from "./commands/use";
 import { cleanCommand } from "./commands/clean";
+import { listCommand } from "./commands/list";
+import { newCommand } from "./commands/new";
+import { runCommand } from "./commands/run";
+import { useCommand } from "./commands/use";
+import { worktreesCommand } from "./commands/worktrees";
 
 const HELP_TEXT = `
 chief - AI coding agent task runner
@@ -47,28 +47,35 @@ async function main(): Promise<void> {
 
   try {
     switch (command) {
-      case "new":
-        await newCommand(commandArgs);
+      case "new": {
+        await newCommand();
         break;
-      case "list":
-        await listCommand(commandArgs);
+      }
+      case "list": {
+        await listCommand();
         break;
-      case "run":
+      }
+      case "run": {
         await runCommand(commandArgs);
         break;
-      case "worktrees":
-        await worktreesCommand(commandArgs);
+      }
+      case "worktrees": {
+        await worktreesCommand();
         break;
-      case "use":
+      }
+      case "use": {
         await useCommand(commandArgs);
         break;
-      case "clean":
+      }
+      case "clean": {
         await cleanCommand(commandArgs);
         break;
-      default:
+      }
+      default: {
         console.error(`Unknown command: ${command}`);
         console.log(HELP_TEXT);
         process.exit(1);
+      }
     }
   } catch (error) {
     if (error instanceof Error) {
