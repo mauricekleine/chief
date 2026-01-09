@@ -44,10 +44,18 @@ This will:
 ### List tasks
 
 ```bash
-chief list
+chief tasks list
 ```
 
 Shows all tasks for the current worktree with their completion status.
+
+### Create tasks
+
+```bash
+chief tasks create
+```
+
+Creates tasks from an existing `plan.md` file in the current worktree.
 
 ### Run tasks
 

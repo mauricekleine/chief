@@ -3,12 +3,9 @@ import { existsSync } from "fs";
 import { rm } from "fs/promises";
 import { join, basename } from "path";
 import { isGitRepo, getGitRoot, removeWorktree } from "../lib/git";
-import {
-  ensureChiefDir,
-  getConfig,
-  setConfig,
-} from "../lib/config";
+import { ensureChiefDir, getConfig, setConfig } from "../lib/config";
 import { prompt } from "../lib/terminal";
+import { selectWorktree } from "../lib/prompts";
 
 export async function cleanCommand(args: string[]): Promise<void> {
   // Check if we're in a git repo

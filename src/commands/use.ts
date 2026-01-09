@@ -47,5 +47,5 @@ export async function useCommand(args: string[]): Promise<void> {
 
   console.log(`\n✓ Switched to worktree: ${worktreeName}`);
   console.log(`  Path: ${worktreePath}`);
-  console.log("\nRun `chief list` to see tasks or `chief run` to start.");
+  console.log("\nRun `chief tasks list` to see tasks or `chief run` to start.");
 }

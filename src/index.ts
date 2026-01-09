@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { newCommand } from "./commands/new";
-import { listCommand } from "./commands/list";
+import { tasksCommand } from "./commands/tasks";
 import { runCommand } from "./commands/run";
 import { worktreesCommand } from "./commands/worktrees";
 import { useCommand } from "./commands/use";
@@ -15,7 +15,8 @@ Usage:
 
 Commands:
   new                  Create a new worktree and start planning
-  list                 List tasks in the current worktree
+  tasks list           List tasks in the current worktree
+  tasks create         Create tasks for the current worktree
   run [--single]       Run tasks (loop until done, or once with --single)
   worktrees            List all worktrees
   use <name>           Switch to a different worktree
@@ -26,7 +27,8 @@ Options:
 
 Examples:
   chief new                  Start a new project (prompts for description)
-  chief list                 Show tasks for current worktree
+  chief tasks list           Show tasks for current worktree
+  chief tasks create         Create tasks for existing worktree
   chief run                  Run tasks in a loop
   chief run --single         Run tasks once interactively
   chief worktrees            List all worktrees
@@ -50,8 +52,8 @@ async function main(): Promise<void> {
       case "new":
         await newCommand(commandArgs);
         break;
-      case "list":
-        await listCommand(commandArgs);
+      case "tasks":
+        await tasksCommand(commandArgs);
         break;
       case "run":
         await runCommand(commandArgs);
