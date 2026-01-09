@@ -1,28 +1,30 @@
-import { existsSync } from "fs";
-import { basename, join } from "path";
-import { isGitRepo, getGitRoot } from "../lib/git";
-import { readTasks, getTaskStats } from "../lib/tasks";
-import {
-  ensureChiefDir,
-  getCurrentWorktree,
-  ensureWorktreeChiefDir,
-} from "../lib/config";
-import { runPrint } from "../lib/claude";
+import { existsSync } from "node:fs";
+import { basename, join } from "node:path";
+
 import { codeBlock } from "common-tags";
 
-const TASKS_HELP = `
-chief tasks - Manage tasks in the current worktree
+import { runPrint } from "../lib/claude";
+import {
+  ensureChiefDir,
+  ensureWorktreeChiefDir,
+  getCurrentWorktree,
+} from "../lib/config";
+import { getGitRoot, isGitRepo } from "../lib/git";
+import { getTaskStats, readTasks } from "../lib/tasks";
 
-Usage:
-  chief tasks <subcommand>
+const TASKS_HELP = codeBlock`
+  chief tasks - Manage tasks in the current worktree
 
-Subcommands:
-  list                 List tasks in the current worktree
-  create               Create tasks for the current worktree
+  Usage:
+    chief tasks <subcommand>
 
-Examples:
-  chief tasks list     Show tasks for current worktree
-  chief tasks create   Start planning and create tasks
+  Subcommands:
+    list                 List tasks in the current worktree
+    create               Create tasks for the current worktree
+
+  Examples:
+    chief tasks list     Show tasks for current worktree
+    chief tasks create   Start planning and create tasks
 `;
 
 export async function tasksCommand(args: string[]): Promise<void> {
@@ -34,16 +36,20 @@ export async function tasksCommand(args: string[]): Promise<void> {
   }
 
   switch (subcommand) {
-    case "list":
+    case "list": {
       await listSubcommand();
       break;
-    case "create":
+    }
+    case "create": {
       await createSubcommand();
       break;
-    default:
+    }
+    default: {
       console.error(`Unknown subcommand: ${subcommand}`);
       console.log(TASKS_HELP);
+      // eslint-disable-next-line unicorn/no-process-exit
       process.exit(1);
+    }
   }
 }
 
@@ -51,7 +57,7 @@ async function listSubcommand(): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -63,7 +69,7 @@ async function listSubcommand(): Promise<void> {
 
   if (!worktreePath) {
     throw new Error(
-      "No current worktree. Run `chief new <name>` or `chief use <name>` first."
+      "No current worktree. Run `chief new <name>` or `chief use <name>` first.",
     );
   }
 
@@ -87,10 +93,15 @@ async function listSubcommand(): Promise<void> {
   console.log("─".repeat(80));
 
   for (let i = 0; i < tasks.length; i++) {
-    const task = tasks[i];
+    const task = tasks.at(i);
+
+    if (!task) {
+      continue;
+    }
+
     const status = task.passes ? "✓" : "○";
-    const statusColor = task.passes ? "\x1b[32m" : "\x1b[33m";
-    const reset = "\x1b[0m";
+    const statusColor = task.passes ? "\u001B[32m" : "\u001B[33m";
+    const reset = "\u001B[0m";
 
     // Truncate description if too long
     const maxDescLen = 60;
@@ -100,7 +111,7 @@ async function listSubcommand(): Promise<void> {
         : task.description;
 
     console.log(
-      `${statusColor}${status}${reset} [${i + 1}] ${task.category}: ${desc}`
+      `${statusColor}${status}${reset} [${i + 1}] ${task.category}: ${desc}`,
     );
     console.log(`     Steps: ${task.steps.length}`);
   }
@@ -119,7 +130,7 @@ async function createSubcommand(): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -131,7 +142,7 @@ async function createSubcommand(): Promise<void> {
 
   if (!worktreePath) {
     throw new Error(
-      "No current worktree. Run `chief new` or `chief use <name>` first."
+      "No current worktree. Run `chief new` or `chief use <name>` first.",
     );
   }
 
@@ -148,14 +159,14 @@ async function createSubcommand(): Promise<void> {
   // Check that plan.md exists
   if (!existsSync(planPath)) {
     throw new Error(
-      `Plan not found at ${planPath}. Create a plan.md file first or run \`chief new\` to start a new project.`
+      `Plan not found at ${planPath}. Create a plan.md file first or run \`chief new\` to start a new project.`,
     );
   }
 
   // Check that tasks.schema.json exists in the worktree
   if (!existsSync(tasksSchemaPath)) {
     throw new Error(
-      `Task schema not found at ${tasksSchemaPath}. Run \`chief new\` to set up the worktree properly.`
+      `Task schema not found at ${tasksSchemaPath}. Run \`chief new\` to set up the worktree properly.`,
     );
   }
 
@@ -166,7 +177,7 @@ async function createSubcommand(): Promise<void> {
       Read the plan from "${planPath}" and convert it into a series of tasks according to the JSON schema in "${tasksSchemaPath}".
       Output the tasks to "${tasksPath}". Make sure each task has: category, description, passes (set to false), and steps array.
     `,
-    { cwd: worktreePath, model: "sonnet" }
+    { cwd: worktreePath, model: "sonnet" },
   );
 
   console.log("\n✓ Tasks created successfully!");
