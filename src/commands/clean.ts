@@ -9,20 +9,7 @@ import {
   getConfig,
   setConfig,
 } from "../lib/config";
-
-function prompt(question: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      resolve(answer);
-    });
-  });
-}
+import { prompt } from "../lib/terminal";
 
 export async function cleanCommand(args: string[]): Promise<void> {
   // Check if we're in a git repo

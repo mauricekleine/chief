@@ -11,43 +11,7 @@ import {
   setVerificationSteps,
 } from "../lib/config";
 import { codeBlock } from "common-tags";
-
-function prompt(question: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      resolve(answer);
-    });
-  });
-}
-
-function promptMultiline(question: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  console.log(question);
-  console.log("(Enter an empty line to finish)\n");
-
-  return new Promise((resolve) => {
-    const lines: string[] = [];
-
-    rl.on("line", (line) => {
-      if (line === "") {
-        rl.close();
-        resolve(lines.join("\n"));
-      } else {
-        lines.push(line);
-      }
-    });
-  });
-}
+import { promptMultiline } from "../lib/terminal";
 
 function buildPrompt(worktreePath: string, verificationSteps: string): string {
   const planPath = join(worktreePath, ".chief", "plan.md");
