@@ -1,5 +1,5 @@
-import { copyFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync } from "node:fs";
+import { basename, join } from "node:path";
 
 import { codeBlock } from "common-tags";
 
@@ -8,7 +8,6 @@ import {
   ensureChiefDir,
   ensureWorktreeChiefDir,
   ensureWorktreesDir,
-  setCurrentWorktree,
 } from "../lib/config";
 import {
   ensureChiefInGitignore,
@@ -91,6 +90,14 @@ export async function newCommand(): Promise<void> {
   // Copy tasks schema to worktree so Claude can access it
   copyFileSync(mainTasksSchemaPath, worktreeTasksSchemaPath);
 
+  // Copy verification.txt to worktree if it exists in main .chief
+  const mainVerificationPath = join(chiefDir, "verification.txt");
+  const worktreeVerificationPath = join(worktreeChiefDir, "verification.txt");
+
+  if (existsSync(mainVerificationPath)) {
+    copyFileSync(mainVerificationPath, worktreeVerificationPath);
+  }
+
   // Step 2: Run Claude in plan mode for the interactive planning session
   const planPrompt = codeBlock`
     ${description}
@@ -118,12 +125,11 @@ export async function newCommand(): Promise<void> {
     { cwd: worktreePath, model: "sonnet" },
   );
 
-  // Set as current worktree
-  await setCurrentWorktree(chiefDir, worktreePath);
+  const worktreeName = basename(worktreePath);
 
   console.log("\n✓ Tasks created successfully!");
   console.log(`  Worktree: ${worktreePath}`);
   console.log("\nNext steps:");
-  console.log("  chief tasks list  - View the tasks");
-  console.log("  chief run         - Start working on tasks");
+  console.log(`  chief tasks list ${worktreeName}  - View the tasks`);
+  console.log(`  chief run ${worktreeName}         - Start working on tasks`);
 }
