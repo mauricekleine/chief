@@ -1,10 +1,8 @@
 import { select } from "@inquirer/prompts";
 
-import { getCurrentWorktree } from "./config";
 import { listWorktreeDirectories } from "./git";
 
 export interface SelectWorktreeOptions {
-  excludeCurrent?: boolean;
   message?: string;
 }
 
@@ -24,23 +22,10 @@ export async function selectWorktree(
     return null;
   }
 
-  const currentWorktree = await getCurrentWorktree(chiefDir);
-
-  const choices = worktrees
-    .filter((wt) => !options?.excludeCurrent || wt.path !== currentWorktree)
-    .map((wt) => {
-      const isCurrent = wt.path === currentWorktree;
-      return {
-        name: isCurrent ? `${wt.name} [current]` : wt.name,
-        value: wt.path,
-      };
-    });
-
-  if (choices.length === 0) {
-    console.log("\nNo other worktrees available.");
-    console.log("Run `chief new` to create one.");
-    return null;
-  }
+  const choices = worktrees.map((wt) => ({
+    name: wt.name,
+    value: wt.path,
+  }));
 
   return select({
     choices,
