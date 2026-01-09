@@ -6,7 +6,6 @@ import { cleanCommand } from "./commands/clean";
 import { newCommand } from "./commands/new";
 import { runCommand } from "./commands/run";
 import { tasksCommand } from "./commands/tasks";
-import { useCommand } from "./commands/use";
 import { worktreesCommand } from "./commands/worktrees";
 
 const HELP_TEXT = codeBlock`
@@ -17,11 +16,10 @@ const HELP_TEXT = codeBlock`
 
   Commands:
     new                  Create a new worktree and start planning
-    tasks list           List tasks in the current worktree
-    tasks create         Create tasks for the current worktree
-    run [--single]       Run tasks (loop until done, or once with --single)
+    tasks list [name]    List tasks for a worktree
+    tasks create [name]  Create tasks for a worktree
+    run [name] [--single] Run tasks (loop until done, or once with --single)
     worktrees            List all worktrees
-    use <name>           Switch to a different worktree
     clean [name]         Delete a worktree
 
   Options:
@@ -29,13 +27,13 @@ const HELP_TEXT = codeBlock`
 
   Examples:
     chief new                  Start a new project (prompts for description)
-    chief tasks list           Show tasks for current worktree
-    chief tasks create         Create tasks for existing worktree
-    chief run                  Run tasks in a loop
-    chief run --single         Run tasks once interactively
+    chief tasks list           Show interactive picker for worktree tasks
+    chief tasks list my-feat   Show tasks for specific worktree
+    chief run                  Show interactive picker, then run tasks
+    chief run my-feature       Run tasks for specific worktree
+    chief run my-feature -s    Run tasks once interactively
     chief worktrees            List all worktrees
-    chief use my-feature-abc   Switch to worktree
-    chief clean                Clean up current worktree
+    chief clean                Clean up a worktree
 `;
 
 async function main(): Promise<void> {
@@ -65,10 +63,6 @@ async function main(): Promise<void> {
       }
       case "worktrees": {
         await worktreesCommand();
-        break;
-      }
-      case "use": {
-        await useCommand(commandArgs);
         break;
       }
       case "clean": {
