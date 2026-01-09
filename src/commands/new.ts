@@ -1,0 +1,144 @@
+import { createInterface } from "readline";
+import { join } from "path";
+import {
+  isGitRepo,
+  getGitRoot,
+  getCurrentBranch,
+  ensureChiefInGitignore,
+} from "../lib/git";
+import { generateHash } from "../lib/hash";
+import { runPrint, runPlanMode } from "../lib/claude";
+import { writeTaskSchema } from "../lib/tasks";
+import {
+  ensureChiefDir,
+  ensureWorktreesDir,
+  ensureWorktreeChiefDir,
+  setCurrentWorktree,
+} from "../lib/config";
+import { codeBlock } from "common-tags";
+
+function promptMultiline(question: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  console.log(question);
+  console.log("(Enter an empty line to finish)\n");
+
+  return new Promise((resolve) => {
+    const lines: string[] = [];
+
+    rl.on("line", (line) => {
+      if (line === "") {
+        rl.close();
+        resolve(lines.join("\n"));
+      } else {
+        lines.push(line);
+      }
+    });
+  });
+}
+
+export async function newCommand(_args: string[]): Promise<void> {
+  // Check if we're in a git repo
+  if (!(await isGitRepo())) {
+    throw new Error(
+      "Not in a git repository. Please run from within a git repo."
+    );
+  }
+
+  const gitRoot = await getGitRoot();
+  const currentBranch = await getCurrentBranch();
+
+  // Ensure .chief is in .gitignore before creating worktree
+  await ensureChiefInGitignore(gitRoot);
+
+  // Ensure .chief directory exists
+  const chiefDir = await ensureChiefDir(gitRoot);
+  const worktreesDir = await ensureWorktreesDir(chiefDir);
+
+  // Write task schema if it doesn't exist
+  await writeTaskSchema(chiefDir);
+
+  // Prompt user for project description first
+  const description = await promptMultiline(
+    "Describe what you want to build or accomplish:"
+  );
+
+  if (!description.trim()) {
+    throw new Error("Project description cannot be empty.");
+  }
+
+  // Generate a hash for uniqueness
+  const hash = generateHash();
+
+  // Step 1: Ask Claude to create the worktree with an appropriate name
+  console.log("\nCreating git worktree...");
+  const worktreeResult = await runPrint(
+    codeBlock`
+      Based on this project description, create a git worktree with an appropriate short name (kebab-case, max 30 chars).
+
+      Description: ${description}
+
+      Create the worktree at "${worktreesDir}/<name>-${hash}" based on the current branch "${currentBranch}".
+      Use "<name>-${hash}" as the branch name.
+
+      After creating the worktree, output ONLY the full path to the worktree on a single line, nothing else.
+    `,
+    { cwd: gitRoot, model: "sonnet" }
+  );
+
+  // Extract the worktree path from Claude's output
+  const worktreePath = worktreeResult.trim().split("\n").pop()?.trim();
+
+  if (!worktreePath || !worktreePath.includes(worktreesDir)) {
+    throw new Error("Failed to create worktree. Please try again.");
+  }
+
+  console.log(`Created worktree: ${worktreePath}`);
+
+  // Ensure .chief is in .gitignore in the worktree (since the main repo change isn't committed yet)
+  await ensureChiefInGitignore(worktreePath);
+
+  // Ensure .chief directory exists within the worktree for plan and tasks
+  const worktreeChiefDir = await ensureWorktreeChiefDir(worktreePath);
+  const planPath = join(worktreeChiefDir, "plan.md");
+  const tasksSchemaPath = join(chiefDir, "tasks.schema.json");
+  const tasksPath = join(worktreeChiefDir, "tasks.json");
+
+  // Step 2: Run Claude in plan mode for the interactive planning session
+  const planPrompt = codeBlock`
+    ${description}
+
+    Conduct a user interview before creating the plan. Ask clarifying questions to understand the requirements better.
+
+    When you have formulated the plan, output it to ${planPath}.
+
+    Important: you are NOT allowed to start executing the plan. Once the plan is created, you MUST exit the session.
+  `;
+
+  console.log("\nStarting planning session with Claude...");
+  console.log("(Exit the session when you're done planning)\n");
+
+  await runPlanMode(planPrompt, { cwd: worktreePath });
+
+  // Step 3: Convert plan to tasks
+  console.log("\nConverting plan to tasks...");
+  await runPrint(
+    codeBlock`
+      Read the plan from "${planPath}" and convert it into a series of tasks according to the JSON schema in "${tasksSchemaPath}".
+      Output the tasks to "${tasksPath}". Make sure each task has: category, description, passes (set to false), and steps array.
+    `,
+    { cwd: worktreePath, model: "sonnet" }
+  );
+
+  // Set as current worktree
+  await setCurrentWorktree(chiefDir, worktreePath);
+
+  console.log("\n✓ Tasks created successfully!");
+  console.log(`  Worktree: ${worktreePath}`);
+  console.log("\nNext steps:");
+  console.log("  chief list    - View the tasks");
+  console.log("  chief run     - Start working on tasks");
+}

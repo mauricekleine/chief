@@ -1,0 +1,19 @@
+{
+  "name": "chief",
+  "version": "0.1.0",
+  "description": "CLI tool for running AI coding agents in a loop using the Ralph Wiggum methodology",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/common-tags": "^1.8.4",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "common-tags": "^1.8.2"
+  }
+}

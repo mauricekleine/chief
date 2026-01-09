@@ -1,0 +1,128 @@
+import { $ } from "bun";
+import { existsSync } from "fs";
+import { readdir, stat } from "fs/promises";
+import { join } from "path";
+
+/**
+ * Check if the current directory is a git repository.
+ */
+export async function isGitRepo(): Promise<boolean> {
+  try {
+    await $`git rev-parse --is-inside-work-tree`.quiet();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get the current branch name.
+ */
+export async function getCurrentBranch(): Promise<string> {
+  const result = await $`git branch --show-current`.text();
+  return result.trim();
+}
+
+/**
+ * Create a new git worktree.
+ */
+export async function createWorktree(
+  worktreePath: string,
+  branchName: string
+): Promise<void> {
+  await $`git worktree add ${worktreePath} -b ${branchName}`;
+}
+
+/**
+ * Remove a git worktree.
+ */
+export async function removeWorktree(worktreePath: string): Promise<void> {
+  await $`git worktree remove ${worktreePath} --force`;
+}
+
+/**
+ * List all worktrees in .chief/worktrees/
+ */
+export async function listWorktreeDirectories(
+  chiefDir: string
+): Promise<{ name: string; path: string; createdAt: Date }[]> {
+  const worktreesDir = join(chiefDir, "worktrees");
+
+  if (!existsSync(worktreesDir)) {
+    return [];
+  }
+
+  const entries = await readdir(worktreesDir, { withFileTypes: true });
+  const worktrees: { name: string; path: string; createdAt: Date }[] = [];
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const fullPath = join(worktreesDir, entry.name);
+      const stats = await stat(fullPath);
+      worktrees.push({
+        name: entry.name,
+        path: fullPath,
+        createdAt: stats.birthtime,
+      });
+    }
+  }
+
+  return worktrees.sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  );
+}
+
+/**
+ * Push changes to the remote repository.
+ */
+export async function pushChanges(): Promise<void> {
+  await $`git push -u origin HEAD`;
+}
+
+/**
+ * Get the root directory of the git repository.
+ */
+export async function getGitRoot(): Promise<string> {
+  const result = await $`git rev-parse --show-toplevel`.text();
+  return result.trim();
+}
+
+/**
+ * Check if .chief is in the .gitignore file.
+ */
+export async function isChiefIgnored(gitRoot: string): Promise<boolean> {
+  const gitignorePath = join(gitRoot, ".gitignore");
+
+  if (!existsSync(gitignorePath)) {
+    return false;
+  }
+
+  const { readFile } = await import("fs/promises");
+  const content = await readFile(gitignorePath, "utf-8");
+  const lines = content.split("\n").map((line) => line.trim());
+
+  return lines.some((line) => line === ".chief" || line === ".chief/");
+}
+
+/**
+ * Add .chief to .gitignore if not already present.
+ */
+export async function ensureChiefInGitignore(gitRoot: string): Promise<void> {
+  if (await isChiefIgnored(gitRoot)) {
+    return;
+  }
+
+  const gitignorePath = join(gitRoot, ".gitignore");
+  const { readFile, writeFile } = await import("fs/promises");
+
+  let content = "";
+  if (existsSync(gitignorePath)) {
+    content = await readFile(gitignorePath, "utf-8");
+    if (!content.endsWith("\n")) {
+      content += "\n";
+    }
+  }
+
+  content += "\n# Chief\n.chief/\n";
+  await writeFile(gitignorePath, content);
+}
