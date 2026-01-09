@@ -44,27 +44,38 @@ This will:
 ### List tasks
 
 ```bash
+# Interactive worktree selection
 chief tasks list
+
+# Specify worktree by name
+chief tasks list <worktree-name>
 ```
 
-Shows all tasks for the current worktree with their completion status.
+Shows all tasks for the selected worktree with their completion status.
 
 ### Create tasks
 
 ```bash
+# Interactive worktree selection
 chief tasks create
+
+# Specify worktree by name
+chief tasks create <worktree-name>
 ```
 
-Creates tasks from an existing `plan.md` file in the current worktree.
+Creates tasks from an existing `plan.md` file in the selected worktree.
 
 ### Run tasks
 
 ```bash
-# Run in loop mode (autonomous)
+# Interactive worktree selection, loop mode (autonomous)
 chief run
 
+# Specify worktree by name
+chief run <worktree-name>
+
 # Run once interactively
-chief run --single
+chief run <worktree-name> --single
 ```
 
 In loop mode, Chief will:
@@ -82,9 +93,6 @@ In loop mode, Chief will:
 # List all worktrees
 chief worktrees
 
-# Switch to a different worktree
-chief use <worktree-name>
-
 # Delete a worktree
 chief clean [worktree-name]
 ```
@@ -93,10 +101,15 @@ chief clean [worktree-name]
 
 Chief stores its configuration in `.chief/` at your repository root:
 
-- `config.json` - Current worktree and settings
 - `tasks.schema.json` - JSON schema for tasks
-- `verification.txt` - Verification steps (set on first `chief run`)
+- `verification.txt` - Verification steps template (copied to each worktree)
 - `worktrees/` - Git worktrees for each project
+
+Each worktree has its own `.chief/` directory containing:
+
+- `plan.md` - The implementation plan
+- `tasks.json` - Structured tasks for the worktree
+- `verification.txt` - Verification steps for this worktree
 
 ### Verification Steps
 
