@@ -6,12 +6,23 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "bun run src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/common-tags": "^1.8.4",
-    "typescript": "^5.0.0"
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-sort": "^4.0.0",
+    "eslint-plugin-unicorn": "^62.0.0",
+    "eslint-plugin-unused-imports": "^4.3.0",
+    "prettier": "^3.7.4",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.52.0"
   },
   "dependencies": {
     "common-tags": "^1.8.2"
