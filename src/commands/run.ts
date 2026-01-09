@@ -6,11 +6,11 @@ import { codeBlock } from "common-tags";
 import { runInteractive, runPrint } from "../lib/claude";
 import {
   ensureChiefDir,
-  getCurrentWorktree,
   getVerificationSteps,
   setVerificationSteps,
 } from "../lib/config";
 import { getGitRoot, isGitRepo, pushChanges } from "../lib/git";
+import { selectWorktree } from "../lib/prompts";
 import { hasPendingTasks, readTasks } from "../lib/tasks";
 import { promptMultiline } from "../lib/terminal";
 
@@ -36,6 +36,9 @@ function buildPrompt(worktreePath: string, verificationSteps: string): string {
 export async function runCommand(args: string[]): Promise<void> {
   const singleMode = args.includes("--single") || args.includes("-s");
 
+  // Parse worktree argument (filter out flags)
+  const worktreeArg = args.find((arg) => !arg.startsWith("-"));
+
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
@@ -46,21 +49,31 @@ export async function runCommand(args: string[]): Promise<void> {
   const gitRoot = await getGitRoot();
   const chiefDir = await ensureChiefDir(gitRoot);
 
-  // Get current worktree
-  const worktreePath = await getCurrentWorktree(chiefDir);
+  // Get worktree path - either from argument or interactive selection
+  let worktreePath: string | null;
 
-  if (!worktreePath) {
-    throw new Error(
-      "No current worktree. Run `chief new <name>` or `chief use <name>` first.",
-    );
+  if (worktreeArg) {
+    // Validate that the specified worktree exists
+    worktreePath = join(chiefDir, "worktrees", worktreeArg);
+    if (!existsSync(worktreePath)) {
+      throw new Error(`Worktree not found: ${worktreeArg}`);
+    }
+  } else {
+    // Interactive selection
+    worktreePath = await selectWorktree(chiefDir, {
+      message: "Select a worktree to run:",
+    });
+
+    if (!worktreePath) {
+      return;
+    }
   }
 
-  if (!existsSync(worktreePath)) {
-    throw new Error(`Worktree not found: ${worktreePath}`);
-  }
+  // Get the worktree's .chief directory for verification steps
+  const worktreeChiefDir = join(worktreePath, ".chief");
 
-  // Check for verification steps, prompt if not set
-  let verificationSteps = await getVerificationSteps(chiefDir);
+  // Check for verification steps in worktree, prompt if not set
+  let verificationSteps = await getVerificationSteps(worktreeChiefDir);
 
   if (!verificationSteps) {
     console.log("\nFirst-time setup: Please provide verification steps.");
@@ -78,7 +91,7 @@ export async function runCommand(args: string[]): Promise<void> {
       throw new Error("Verification steps cannot be empty.");
     }
 
-    await setVerificationSteps(chiefDir, verificationSteps);
+    await setVerificationSteps(worktreeChiefDir, verificationSteps);
     console.log("\n✓ Verification steps saved.\n");
   }
 
