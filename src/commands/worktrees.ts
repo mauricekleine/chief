@@ -1,4 +1,4 @@
-import { ensureChiefDir, getCurrentWorktree } from "../lib/config";
+import { ensureChiefDir } from "../lib/config";
 import { getGitRoot, isGitRepo, listWorktreeDirectories } from "../lib/git";
 import { getTaskStats, readTasks } from "../lib/tasks";
 
@@ -13,9 +13,6 @@ export async function worktreesCommand(): Promise<void> {
   const gitRoot = await getGitRoot();
   const chiefDir = await ensureChiefDir(gitRoot);
 
-  // Get current worktree for marking
-  const currentWorktree = await getCurrentWorktree(chiefDir);
-
   // List all worktrees
   const worktrees = await listWorktreeDirectories(chiefDir);
 
@@ -29,11 +26,6 @@ export async function worktreesCommand(): Promise<void> {
   console.log("─".repeat(80));
 
   for (const wt of worktrees) {
-    const isCurrent = currentWorktree === wt.path;
-    const marker = isCurrent ? " [current]" : "";
-    const highlight = isCurrent ? "\u001B[36m" : "";
-    const reset = isCurrent ? "\u001B[0m" : "";
-
     // Try to get task stats
     let progressStr = "";
     try {
@@ -48,7 +40,7 @@ export async function worktreesCommand(): Promise<void> {
 
     const dateStr = wt.createdAt.toLocaleDateString();
 
-    console.log(`${highlight}${wt.name}${marker}${reset}`);
+    console.log(wt.name);
     console.log(`  Created: ${dateStr}${progressStr}`);
     console.log(`  Path: ${wt.path}`);
     console.log();
@@ -56,5 +48,5 @@ export async function worktreesCommand(): Promise<void> {
 
   console.log("─".repeat(80));
   console.log(`\n${worktrees.length} worktree(s) total`);
-  console.log("\nUse `chief use <name>` to switch worktrees.");
+  console.log("\nUse `chief run <name>` to work on a worktree.");
 }
