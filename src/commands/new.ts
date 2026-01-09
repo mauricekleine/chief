@@ -16,29 +16,7 @@ import {
   setCurrentWorktree,
 } from "../lib/config";
 import { codeBlock } from "common-tags";
-
-function promptMultiline(question: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  console.log(question);
-  console.log("(Enter an empty line to finish)\n");
-
-  return new Promise((resolve) => {
-    const lines: string[] = [];
-
-    rl.on("line", (line) => {
-      if (line === "") {
-        rl.close();
-        resolve(lines.join("\n"));
-      } else {
-        lines.push(line);
-      }
-    });
-  });
-}
+import { promptMultiline } from "../lib/terminal";
 
 export async function newCommand(_args: string[]): Promise<void> {
   // Check if we're in a git repo
