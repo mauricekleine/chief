@@ -1,17 +1,17 @@
-import { createInterface } from "readline";
-import { existsSync } from "fs";
-import { rm } from "fs/promises";
-import { join, basename } from "path";
-import { isGitRepo, getGitRoot, removeWorktree } from "../lib/git";
+import { existsSync } from "node:fs";
+import { rm } from "node:fs/promises";
+import { basename, join } from "node:path";
+
 import { ensureChiefDir, getConfig, setConfig } from "../lib/config";
-import { prompt } from "../lib/terminal";
+import { getGitRoot, isGitRepo, removeWorktree } from "../lib/git";
 import { selectWorktree } from "../lib/prompts";
+import { prompt } from "../lib/terminal";
 
 export async function cleanCommand(args: string[]): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -24,7 +24,7 @@ export async function cleanCommand(args: string[]): Promise<void> {
 
   if (args.length > 0) {
     // Use specified worktree
-    worktreeName = args[0];
+    worktreeName = args[0] as string;
     worktreePath = join(chiefDir, "worktrees", worktreeName);
   } else {
     // Interactive selection
@@ -42,13 +42,13 @@ export async function cleanCommand(args: string[]): Promise<void> {
 
   if (!existsSync(worktreePath)) {
     throw new Error(
-      `Worktree not found: ${worktreeName}\n\nRun \`chief worktrees\` to see available worktrees.`
+      `Worktree not found: ${worktreeName}\n\nRun \`chief worktrees\` to see available worktrees.`,
     );
   }
 
   // Confirm with user
   const answer = await prompt(
-    `\nAre you sure you want to delete worktree "${worktreeName}"? (y/N) `
+    `\nAre you sure you want to delete worktree "${worktreeName}"? (y/N) `,
   );
 
   if (answer.toLowerCase() !== "y") {
@@ -68,7 +68,7 @@ export async function cleanCommand(args: string[]): Promise<void> {
 
   // Remove directory if it still exists
   if (existsSync(worktreePath)) {
-    await rm(worktreePath, { recursive: true, force: true });
+    await rm(worktreePath, { force: true, recursive: true });
   }
 
   // Update config if this was the current worktree
@@ -80,6 +80,6 @@ export async function cleanCommand(args: string[]): Promise<void> {
 
   console.log(`\n✓ Worktree "${worktreeName}" cleaned up successfully.`);
   console.log(
-    "\nYou can start a new project by running `chief new <project-name>`."
+    "\nYou can start a new project by running `chief new <project-name>`.",
   );
 }

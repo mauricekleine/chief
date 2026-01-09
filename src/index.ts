@@ -1,39 +1,41 @@
 #!/usr/bin/env bun
 
-import { newCommand } from "./commands/new";
-import { tasksCommand } from "./commands/tasks";
-import { runCommand } from "./commands/run";
-import { worktreesCommand } from "./commands/worktrees";
-import { useCommand } from "./commands/use";
+import { codeBlock } from "common-tags";
+
 import { cleanCommand } from "./commands/clean";
+import { newCommand } from "./commands/new";
+import { runCommand } from "./commands/run";
+import { tasksCommand } from "./commands/tasks";
+import { useCommand } from "./commands/use";
+import { worktreesCommand } from "./commands/worktrees";
 
-const HELP_TEXT = `
-chief - AI coding agent task runner
+const HELP_TEXT = codeBlock`
+  chief - AI coding agent task runner
 
-Usage:
-  chief <command> [options]
+  Usage:
+    chief <command> [options]
 
-Commands:
-  new                  Create a new worktree and start planning
-  tasks list           List tasks in the current worktree
-  tasks create         Create tasks for the current worktree
-  run [--single]       Run tasks (loop until done, or once with --single)
-  worktrees            List all worktrees
-  use <name>           Switch to a different worktree
-  clean [name]         Delete a worktree
+  Commands:
+    new                  Create a new worktree and start planning
+    tasks list           List tasks in the current worktree
+    tasks create         Create tasks for the current worktree
+    run [--single]       Run tasks (loop until done, or once with --single)
+    worktrees            List all worktrees
+    use <name>           Switch to a different worktree
+    clean [name]         Delete a worktree
 
-Options:
-  --help, -h           Show this help message
+  Options:
+    --help, -h           Show this help message
 
-Examples:
-  chief new                  Start a new project (prompts for description)
-  chief tasks list           Show tasks for current worktree
-  chief tasks create         Create tasks for existing worktree
-  chief run                  Run tasks in a loop
-  chief run --single         Run tasks once interactively
-  chief worktrees            List all worktrees
-  chief use my-feature-abc   Switch to worktree
-  chief clean                Clean up current worktree
+  Examples:
+    chief new                  Start a new project (prompts for description)
+    chief tasks list           Show tasks for current worktree
+    chief tasks create         Create tasks for existing worktree
+    chief run                  Run tasks in a loop
+    chief run --single         Run tasks once interactively
+    chief worktrees            List all worktrees
+    chief use my-feature-abc   Switch to worktree
+    chief clean                Clean up current worktree
 `;
 
 async function main(): Promise<void> {
@@ -49,28 +51,35 @@ async function main(): Promise<void> {
 
   try {
     switch (command) {
-      case "new":
-        await newCommand(commandArgs);
+      case "new": {
+        await newCommand();
         break;
-      case "tasks":
+      }
+      case "tasks": {
         await tasksCommand(commandArgs);
         break;
-      case "run":
+      }
+      case "run": {
         await runCommand(commandArgs);
         break;
-      case "worktrees":
-        await worktreesCommand(commandArgs);
+      }
+      case "worktrees": {
+        await worktreesCommand();
         break;
-      case "use":
+      }
+      case "use": {
         await useCommand(commandArgs);
         break;
-      case "clean":
+      }
+      case "clean": {
         await cleanCommand(commandArgs);
         break;
-      default:
+      }
+      default: {
         console.error(`Unknown command: ${command}`);
         console.log(HELP_TEXT);
         process.exit(1);
+      }
     }
   } catch (error) {
     if (error instanceof Error) {

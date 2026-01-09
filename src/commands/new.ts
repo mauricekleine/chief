@@ -1,28 +1,30 @@
-import { copyFileSync } from "fs";
-import { join } from "path";
-import {
-  isGitRepo,
-  getGitRoot,
-  getCurrentBranch,
-  ensureChiefInGitignore,
-} from "../lib/git";
-import { generateHash } from "../lib/hash";
-import { runPrint, runPlanMode } from "../lib/claude";
-import { writeTaskSchema } from "../lib/tasks";
+import { copyFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { codeBlock } from "common-tags";
+
+import { runPlanMode, runPrint } from "../lib/claude";
 import {
   ensureChiefDir,
-  ensureWorktreesDir,
   ensureWorktreeChiefDir,
+  ensureWorktreesDir,
   setCurrentWorktree,
 } from "../lib/config";
-import { codeBlock } from "common-tags";
+import {
+  ensureChiefInGitignore,
+  getCurrentBranch,
+  getGitRoot,
+  isGitRepo,
+} from "../lib/git";
+import { generateHash } from "../lib/hash";
+import { writeTaskSchema } from "../lib/tasks";
 import { promptMultiline } from "../lib/terminal";
 
-export async function newCommand(_args: string[]): Promise<void> {
+export async function newCommand(): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -41,7 +43,7 @@ export async function newCommand(_args: string[]): Promise<void> {
 
   // Prompt user for project description first
   const description = await promptMultiline(
-    "Describe what you want to build or accomplish:"
+    "Describe what you want to build or accomplish:",
   );
 
   if (!description.trim()) {
@@ -64,7 +66,7 @@ export async function newCommand(_args: string[]): Promise<void> {
 
       After creating the worktree, output ONLY the full path to the worktree on a single line, nothing else.
     `,
-    { cwd: gitRoot, model: "sonnet" }
+    { cwd: gitRoot, model: "sonnet" },
   );
 
   // Extract the worktree path from Claude's output
@@ -113,7 +115,7 @@ export async function newCommand(_args: string[]): Promise<void> {
       Read the plan from "${planPath}" and convert it into a series of tasks according to the JSON schema in "${worktreeTasksSchemaPath}".
       Output the tasks to "${tasksPath}". Make sure each task has: category, description, passes (set to false), and steps array.
     `,
-    { cwd: worktreePath, model: "sonnet" }
+    { cwd: worktreePath, model: "sonnet" },
   );
 
   // Set as current worktree

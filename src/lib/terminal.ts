@@ -1,7 +1,7 @@
-import { createInterface } from "readline";
+import { createInterface } from "node:readline";
 
-const FOCUS_REPORTING_DISABLE = "\x1b[?1004l";
-const FOCUS_REPORTING_ENABLE = "\x1b[?1004h";
+const FOCUS_REPORTING_DISABLE = "\u001B[?1004l";
+const FOCUS_REPORTING_ENABLE = "\u001B[?1004h";
 
 function disableFocusReporting(): void {
   process.stdout.write(FOCUS_REPORTING_DISABLE);

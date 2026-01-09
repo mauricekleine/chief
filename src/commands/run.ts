@@ -1,16 +1,17 @@
-import { createInterface } from "readline";
-import { existsSync } from "fs";
-import { basename, join } from "path";
-import { isGitRepo, getGitRoot, pushChanges } from "../lib/git";
-import { readTasks, hasPendingTasks } from "../lib/tasks";
-import { runPrint, runInteractive } from "../lib/claude";
+import { existsSync } from "node:fs";
+import { basename, join } from "node:path";
+
+import { codeBlock } from "common-tags";
+
+import { runInteractive, runPrint } from "../lib/claude";
 import {
   ensureChiefDir,
   getCurrentWorktree,
   getVerificationSteps,
   setVerificationSteps,
 } from "../lib/config";
-import { codeBlock } from "common-tags";
+import { getGitRoot, isGitRepo, pushChanges } from "../lib/git";
+import { hasPendingTasks, readTasks } from "../lib/tasks";
 import { promptMultiline } from "../lib/terminal";
 
 function buildPrompt(worktreePath: string, verificationSteps: string): string {
@@ -38,7 +39,7 @@ export async function runCommand(args: string[]): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
-      "Not in a git repository. Please run from within a git repo."
+      "Not in a git repository. Please run from within a git repo.",
     );
   }
 
@@ -50,7 +51,7 @@ export async function runCommand(args: string[]): Promise<void> {
 
   if (!worktreePath) {
     throw new Error(
-      "No current worktree. Run `chief new <name>` or `chief use <name>` first."
+      "No current worktree. Run `chief new <name>` or `chief use <name>` first.",
     );
   }
 
@@ -64,7 +65,7 @@ export async function runCommand(args: string[]): Promise<void> {
   if (!verificationSteps) {
     console.log("\nFirst-time setup: Please provide verification steps.");
     console.log(
-      "These are commands to verify the AI's work (e.g., tests, lint, build).\n"
+      "These are commands to verify the AI's work (e.g., tests, lint, build).\n",
     );
     console.log("Example:");
     console.log("  - bun run lint");
@@ -88,7 +89,7 @@ export async function runCommand(args: string[]): Promise<void> {
     console.log(`\nRunning single task in: ${basename(worktreePath)}`);
     console.log("(Interactive mode - exit when done)\n");
 
-    await runInteractive(runPrompt, { cwd: worktreePath, chrome: true });
+    await runInteractive(runPrompt, { chrome: true, cwd: worktreePath });
 
     console.log("\n✓ Single run completed.");
   } else {
@@ -109,8 +110,8 @@ export async function runCommand(args: string[]): Promise<void> {
       console.log(`\n--- Iteration ${iteration} ---`);
 
       const output = await runPrint(runPrompt, {
-        cwd: worktreePath,
         chrome: true,
+        cwd: worktreePath,
       });
 
       console.log(output);
@@ -125,7 +126,7 @@ export async function runCommand(args: string[]): Promise<void> {
     console.log("\nCreating pull request...");
     await runPrint(
       "Create a pull request for this branch using the `gh pr create` command. Use a descriptive title and body based on the changes made.",
-      { cwd: worktreePath, model: "sonnet" }
+      { cwd: worktreePath, model: "sonnet" },
     );
 
     console.log("\n✓ All done! Check the PR on GitHub.");

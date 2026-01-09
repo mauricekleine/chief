@@ -11,7 +11,7 @@ export interface ClaudeOptions {
  */
 export async function runPlanMode(
   prompt: string,
-  options: ClaudeOptions = {}
+  options: ClaudeOptions = {},
 ): Promise<void> {
   const args = ["--allowed-tools", "Edit, Write", "--permission-mode", "plan"];
 
@@ -23,9 +23,9 @@ export async function runPlanMode(
 
   const proc = spawn(["claude", ...args], {
     cwd: options.cwd,
+    stderr: "inherit",
     stdin: "inherit",
     stdout: "inherit",
-    stderr: "inherit",
   });
 
   await proc.exited;
@@ -36,7 +36,7 @@ export async function runPlanMode(
  */
 export async function runPrint(
   prompt: string,
-  options: ClaudeOptions = {}
+  options: ClaudeOptions = {},
 ): Promise<string> {
   const args = ["--permission-mode", "acceptEdits", "-p"];
 
@@ -48,8 +48,8 @@ export async function runPrint(
 
   const proc = spawn(["claude", ...args], {
     cwd: options.cwd,
-    stdout: "pipe",
     stderr: "inherit",
+    stdout: "pipe",
   });
 
   const output = await new Response(proc.stdout).text();
@@ -63,7 +63,7 @@ export async function runPrint(
  */
 export async function runInteractive(
   prompt: string,
-  options: ClaudeOptions = {}
+  options: ClaudeOptions = {},
 ): Promise<void> {
   const args = ["--permission-mode", "acceptEdits"];
 
@@ -75,9 +75,9 @@ export async function runInteractive(
 
   const proc = spawn(["claude", ...args], {
     cwd: options.cwd,
+    stderr: "inherit",
     stdin: "inherit",
     stdout: "inherit",
-    stderr: "inherit",
   });
 
   await proc.exited;

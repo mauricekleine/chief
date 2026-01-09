@@ -1,10 +1,11 @@
 import { select } from "@inquirer/prompts";
-import { listWorktreeDirectories } from "./git";
+
 import { getCurrentWorktree } from "./config";
+import { listWorktreeDirectories } from "./git";
 
 export interface SelectWorktreeOptions {
-  message?: string;
   excludeCurrent?: boolean;
+  message?: string;
 }
 
 /**
@@ -13,7 +14,7 @@ export interface SelectWorktreeOptions {
  */
 export async function selectWorktree(
   chiefDir: string,
-  options?: SelectWorktreeOptions
+  options?: SelectWorktreeOptions,
 ): Promise<string | null> {
   const worktrees = await listWorktreeDirectories(chiefDir);
 
@@ -42,7 +43,7 @@ export async function selectWorktree(
   }
 
   return select({
-    message: options?.message ?? "Select a worktree:",
     choices,
+    message: options?.message ?? "Select a worktree:",
   });
 }
