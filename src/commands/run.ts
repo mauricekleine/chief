@@ -97,7 +97,7 @@ export async function runCommand(args: string[]): Promise<void> {
     console.log(`\nRunning tasks in loop mode: ${basename(worktreePath)}`);
     console.log("(Press Ctrl+C to stop)\n");
 
-    let iteration = 1;
+    let iteration = 0;
 
     while (true) {
       const tasks = await readTasks(worktreePath);
@@ -107,7 +107,9 @@ export async function runCommand(args: string[]): Promise<void> {
         break;
       }
 
-      console.log(`\n--- Iteration ${iteration} ---`);
+      console.log(
+        `\n--- Task #${iteration + 1}: ${tasks.at(iteration)?.description} ---`,
+      );
 
       const output = await runPrint(runPrompt, {
         chrome: true,
@@ -121,7 +123,7 @@ export async function runCommand(args: string[]): Promise<void> {
 
     // All tasks done - push and create PR
     console.log("\nPushing changes to remote...");
-    await pushChanges();
+    await pushChanges(worktreePath);
 
     console.log("\nCreating pull request...");
     await runPrint(

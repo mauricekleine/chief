@@ -76,8 +76,8 @@ export async function listWorktreeDirectories(
 /**
  * Push changes to the remote repository.
  */
-export async function pushChanges(): Promise<void> {
-  await $`git push -u origin HEAD`;
+export async function pushChanges(cwd: string): Promise<void> {
+  await $`git push -u origin HEAD`.cwd(cwd);
 }
 
 /**
