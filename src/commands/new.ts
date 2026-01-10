@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 
 import { codeBlock } from "common-tags";
@@ -80,6 +80,19 @@ export async function newCommand(args: string[] = []): Promise<void> {
 
   // Ensure .chief is in .gitignore in the worktree (since the main repo change isn't committed yet)
   await ensureChiefInGitignore(worktreePath);
+
+  // Copy .env files from git root to worktree
+  const envFiles = readdirSync(gitRoot).filter((file) =>
+    file.startsWith(".env"),
+  );
+  for (const envFile of envFiles) {
+    const sourcePath = join(gitRoot, envFile);
+    const destPath = join(worktreePath, envFile);
+    copyFileSync(sourcePath, destPath);
+  }
+  if (envFiles.length > 0) {
+    console.log(`Copied ${envFiles.length} .env file(s) to worktree`);
+  }
 
   // Ensure .chief directory exists within the worktree for plan and tasks
   const worktreeChiefDir = await ensureWorktreeChiefDir(worktreePath);
