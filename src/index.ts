@@ -55,7 +55,7 @@ async function main(): Promise<void> {
   try {
     switch (command) {
       case "new": {
-        await newCommand();
+        await newCommand(commandArgs);
         break;
       }
       case "tasks": {

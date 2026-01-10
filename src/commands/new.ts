@@ -19,7 +19,7 @@ import { generateHash } from "../lib/hash";
 import { writeTaskSchema } from "../lib/tasks";
 import { promptMultiline } from "../lib/terminal";
 
-export async function newCommand(): Promise<void> {
+export async function newCommand(args: string[] = []): Promise<void> {
   // Check if we're in a git repo
   if (!(await isGitRepo())) {
     throw new Error(
@@ -40,10 +40,11 @@ export async function newCommand(): Promise<void> {
   // Write task schema if it doesn't exist
   await writeTaskSchema(chiefDir);
 
-  // Prompt user for project description first
-  const description = await promptMultiline(
-    "Describe what you want to build or accomplish:",
-  );
+  // Get description from CLI args or prompt interactively
+  const cliPrompt = args.join(" ").trim();
+  const description =
+    cliPrompt ||
+    (await promptMultiline("Describe what you want to build or accomplish:"));
 
   if (!description.trim()) {
     throw new Error("Project description cannot be empty.");
