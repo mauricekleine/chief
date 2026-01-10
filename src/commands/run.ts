@@ -9,7 +9,12 @@ import {
   getVerificationSteps,
   setVerificationSteps,
 } from "../lib/config";
-import { getGitRoot, isGitRepo, pushChanges } from "../lib/git";
+import {
+  getGitRoot,
+  hasUnpushedCommits,
+  isGitRepo,
+  pushChanges,
+} from "../lib/git";
 import { selectWorktree } from "../lib/prompts";
 import { hasPendingTasks, readTasks } from "../lib/tasks";
 import { promptMultiline } from "../lib/terminal";
@@ -132,7 +137,17 @@ export async function runCommand(args: string[]): Promise<void> {
       iteration++;
     }
 
-    // All tasks done - push and create PR
+    // Check for unpushed commits before pushing
+    const hasCommitsToPush = await hasUnpushedCommits(worktreePath);
+
+    if (!hasCommitsToPush) {
+      console.log(
+        "\n✓ All tasks completed. No unpushed commits, nothing to push.",
+      );
+      return;
+    }
+
+    // Push and create PR
     console.log("\nPushing changes to remote...");
     await pushChanges(worktreePath);
 
