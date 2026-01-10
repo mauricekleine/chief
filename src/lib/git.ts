@@ -81,6 +81,30 @@ export async function pushChanges(cwd: string): Promise<void> {
 }
 
 /**
+ * Check if there are unpushed commits on the current branch.
+ * Returns true if branch has no upstream (new branch) or has commits ahead of upstream.
+ */
+export async function hasUnpushedCommits(cwd: string): Promise<boolean> {
+  // Check if upstream exists
+  try {
+    await $`git rev-parse --verify @{u}`.cwd(cwd).quiet();
+  } catch {
+    // No upstream = new branch, treat as having unpushed commits
+    return true;
+  }
+
+  // Count commits ahead of upstream
+  try {
+    const result = await $`git rev-list @{u}..HEAD --count`.cwd(cwd).text();
+    const count = Number.parseInt(result.trim(), 10);
+    return count > 0;
+  } catch {
+    // On error, default to true (safer to attempt push)
+    return true;
+  }
+}
+
+/**
  * Get the root directory of the git repository.
  */
 export async function getGitRoot(): Promise<string> {
