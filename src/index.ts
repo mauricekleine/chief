@@ -16,7 +16,7 @@ const HELP_TEXT = codeBlock`
     chief <command> [options]
 
   Commands:
-    new                  Create a new worktree and start planning
+    new [prompt]         Create a new worktree and start planning
     tasks list [name]    List tasks for a worktree
     tasks create [name]  Create tasks for a worktree
     run [name] [--single] Run tasks (loop until done, or once with --single)
@@ -29,6 +29,7 @@ const HELP_TEXT = codeBlock`
 
   Examples:
     chief new                  Start a new project (prompts for description)
+    chief new "build a REST API"  Start with prompt directly
     chief tasks list           Show interactive picker for worktree tasks
     chief tasks list my-feat   Show tasks for specific worktree
     chief run                  Show interactive picker, then run tasks
