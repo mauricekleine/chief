@@ -2,6 +2,7 @@
 
 import { codeBlock } from "common-tags";
 
+import { cdCommand } from "./commands/cd";
 import { cleanCommand } from "./commands/clean";
 import { newCommand } from "./commands/new";
 import { runCommand } from "./commands/run";
@@ -20,6 +21,7 @@ const HELP_TEXT = codeBlock`
     tasks create [name]  Create tasks for a worktree
     run [name] [--single] Run tasks (loop until done, or once with --single)
     worktrees            List all worktrees
+    cd [name]            Print worktree path (use with: cd $(chief cd))
     clean [name]         Delete a worktree
 
   Options:
@@ -33,6 +35,8 @@ const HELP_TEXT = codeBlock`
     chief run my-feature       Run tasks for specific worktree
     chief run my-feature -s    Run tasks once interactively
     chief worktrees            List all worktrees
+    chief cd                   Get path to worktree (interactive picker)
+    chief cd my-feature        Get path to specific worktree
     chief clean                Clean up a worktree
 `;
 
@@ -63,6 +67,10 @@ async function main(): Promise<void> {
       }
       case "worktrees": {
         await worktreesCommand();
+        break;
+      }
+      case "cd": {
+        await cdCommand(commandArgs);
         break;
       }
       case "clean": {
