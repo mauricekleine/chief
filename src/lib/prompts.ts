@@ -11,10 +11,10 @@ export interface SelectWorktreeOptions {
  * Returns the selected worktree path, or null if no worktrees exist.
  */
 export async function selectWorktree(
-  chiefDir: string,
+  projectName: string,
   options?: SelectWorktreeOptions,
 ): Promise<string | null> {
-  const worktrees = await listWorktreeDirectories(chiefDir);
+  const worktrees = await listWorktreeDirectories(projectName);
 
   if (worktrees.length === 0) {
     console.log("\nNo worktrees found.");

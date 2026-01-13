@@ -5,11 +5,13 @@ import { codeBlock } from "common-tags";
 
 import { runInteractive, runPrint } from "../lib/claude";
 import {
-  ensureChiefDir,
+  getGlobalChiefDir,
+  getProjectNameFromGitRoot,
   getVerificationSteps,
   setVerificationSteps,
 } from "../lib/config";
 import {
+  detectWorktreeFromCwd,
   getGitRoot,
   hasUnpushedCommits,
   isGitRepo,
@@ -44,33 +46,43 @@ export async function runCommand(args: string[]): Promise<void> {
   // Parse worktree argument (filter out flags)
   const worktreeArg = args.find((arg) => !arg.startsWith("-"));
 
-  // Check if we're in a git repo
-  if (!(await isGitRepo())) {
-    throw new Error(
-      "Not in a git repository. Please run from within a git repo.",
-    );
-  }
-
-  const gitRoot = await getGitRoot();
-  const chiefDir = await ensureChiefDir(gitRoot);
-
-  // Get worktree path - either from argument or interactive selection
+  // Get worktree path - check auto-detection first, then argument, then interactive selection
   let worktreePath: string | null;
 
-  if (worktreeArg) {
-    // Validate that the specified worktree exists
-    worktreePath = join(chiefDir, "worktrees", worktreeArg);
-    if (!existsSync(worktreePath)) {
-      throw new Error(`Worktree not found: ${worktreeArg}`);
-    }
-  } else {
-    // Interactive selection
-    worktreePath = await selectWorktree(chiefDir, {
-      message: "Select a worktree to run:",
-    });
+  // Try to auto-detect worktree from CWD
+  const detected = detectWorktreeFromCwd();
 
-    if (!worktreePath) {
-      return;
+  if (detected && !worktreeArg) {
+    // Use detected worktree
+    worktreePath = detected.worktreePath;
+    console.log(`Using detected worktree: ${detected.worktreeName}`);
+  } else {
+    // Fall back to original logic - require git repo
+    if (!(await isGitRepo())) {
+      throw new Error(
+        "Not in a git repository or chief worktree. Please run from within a git repo or worktree.",
+      );
+    }
+
+    const gitRoot = await getGitRoot();
+    const projectName = getProjectNameFromGitRoot(gitRoot);
+    const globalChiefDir = getGlobalChiefDir(projectName);
+
+    if (worktreeArg) {
+      // Validate that the specified worktree exists
+      worktreePath = join(globalChiefDir, "worktrees", worktreeArg);
+      if (!existsSync(worktreePath)) {
+        throw new Error(`Worktree not found: ${worktreeArg}`);
+      }
+    } else {
+      // Interactive selection
+      worktreePath = await selectWorktree(projectName, {
+        message: "Select a worktree to run:",
+      });
+
+      if (!worktreePath) {
+        return;
+      }
     }
   }
 

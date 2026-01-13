@@ -1,20 +1,34 @@
-import { ensureChiefDir } from "../lib/config";
-import { getGitRoot, isGitRepo, listWorktreeDirectories } from "../lib/git";
+import { getProjectNameFromGitRoot } from "../lib/config";
+import {
+  detectWorktreeFromCwd,
+  getGitRoot,
+  isGitRepo,
+  listWorktreeDirectories,
+} from "../lib/git";
 import { getTaskStats, readTasks } from "../lib/tasks";
 
 export async function worktreesCommand(): Promise<void> {
-  // Check if we're in a git repo
-  if (!(await isGitRepo())) {
-    throw new Error(
-      "Not in a git repository. Please run from within a git repo.",
-    );
+  let projectName: string;
+
+  // Try to auto-detect from CWD if inside a worktree
+  const detected = detectWorktreeFromCwd();
+
+  if (detected) {
+    projectName = detected.projectName;
+  } else {
+    // Fall back to git repo
+    if (!(await isGitRepo())) {
+      throw new Error(
+        "Not in a git repository or chief worktree. Please run from within a git repo or worktree.",
+      );
+    }
+
+    const gitRoot = await getGitRoot();
+    projectName = getProjectNameFromGitRoot(gitRoot);
   }
 
-  const gitRoot = await getGitRoot();
-  const chiefDir = await ensureChiefDir(gitRoot);
-
   // List all worktrees
-  const worktrees = await listWorktreeDirectories(chiefDir);
+  const worktrees = await listWorktreeDirectories(projectName);
 
   if (worktrees.length === 0) {
     console.log("\nNo worktrees found.");

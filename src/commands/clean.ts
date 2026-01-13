@@ -2,42 +2,58 @@ import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { basename, join } from "node:path";
 
-import { ensureChiefDir } from "../lib/config";
-import { getGitRoot, isGitRepo, removeWorktree } from "../lib/git";
+import { getGlobalChiefDir, getProjectNameFromGitRoot } from "../lib/config";
+import {
+  detectWorktreeFromCwd,
+  getGitRoot,
+  isGitRepo,
+  removeWorktree,
+} from "../lib/git";
 import { selectWorktree } from "../lib/prompts";
 import { prompt } from "../lib/terminal";
 
 export async function cleanCommand(args: string[]): Promise<void> {
-  // Check if we're in a git repo
-  if (!(await isGitRepo())) {
-    throw new Error(
-      "Not in a git repository. Please run from within a git repo.",
-    );
-  }
-
-  const gitRoot = await getGitRoot();
-  const chiefDir = await ensureChiefDir(gitRoot);
-
   // Determine which worktree to clean
   let worktreePath: string;
   let worktreeName: string;
 
-  if (args.length > 0) {
-    // Use specified worktree
-    worktreeName = args[0] as string;
-    worktreePath = join(chiefDir, "worktrees", worktreeName);
-  } else {
-    // Interactive selection
-    const selected = await selectWorktree(chiefDir, {
-      message: "Select a worktree to clean:",
-    });
+  // Try to auto-detect worktree from CWD
+  const detected = detectWorktreeFromCwd();
 
-    if (!selected) {
-      return; // No worktrees exist, message already shown
+  if (detected && args.length === 0) {
+    // Use detected worktree
+    worktreePath = detected.worktreePath;
+    worktreeName = detected.worktreeName;
+    console.log(`Using detected worktree: ${worktreeName}`);
+  } else {
+    // Fall back to original logic - require git repo
+    if (!(await isGitRepo())) {
+      throw new Error(
+        "Not in a git repository or chief worktree. Please run from within a git repo or worktree.",
+      );
     }
 
-    worktreePath = selected;
-    worktreeName = basename(worktreePath);
+    const gitRoot = await getGitRoot();
+    const projectName = getProjectNameFromGitRoot(gitRoot);
+    const globalChiefDir = getGlobalChiefDir(projectName);
+
+    if (args.length > 0) {
+      // Use specified worktree
+      worktreeName = args[0] as string;
+      worktreePath = join(globalChiefDir, "worktrees", worktreeName);
+    } else {
+      // Interactive selection
+      const selected = await selectWorktree(projectName, {
+        message: "Select a worktree to clean:",
+      });
+
+      if (!selected) {
+        return; // No worktrees exist, message already shown
+      }
+
+      worktreePath = selected;
+      worktreeName = basename(worktreePath);
+    }
   }
 
   if (!existsSync(worktreePath)) {

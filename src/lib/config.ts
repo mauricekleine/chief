@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { homedir } from "node:os";
+import { basename, join } from "node:path";
 
 import type { ChiefConfig } from "../types";
 
@@ -92,4 +93,45 @@ export async function setVerificationSteps(
 ): Promise<void> {
   const verificationPath = join(chiefDir, VERIFICATION_FILE);
   await writeFile(verificationPath, steps);
+}
+
+/**
+ * Extract project name from git root path (folder name).
+ */
+export function getProjectNameFromGitRoot(gitRoot: string): string {
+  return basename(gitRoot);
+}
+
+/**
+ * Get the global chief directory for a project: ~/.chief/{project-name}
+ */
+export function getGlobalChiefDir(projectName: string): string {
+  return join(homedir(), ".chief", projectName);
+}
+
+/**
+ * Ensure the global chief directory exists: ~/.chief/{project-name}
+ */
+export async function ensureGlobalChiefDir(
+  projectName: string,
+): Promise<string> {
+  const globalDir = getGlobalChiefDir(projectName);
+  if (!existsSync(globalDir)) {
+    await mkdir(globalDir, { recursive: true });
+  }
+  return globalDir;
+}
+
+/**
+ * Ensure the global worktrees directory exists: ~/.chief/{project-name}/worktrees
+ */
+export async function ensureGlobalWorktreesDir(
+  projectName: string,
+): Promise<string> {
+  const globalDir = await ensureGlobalChiefDir(projectName);
+  const worktreesDir = join(globalDir, "worktrees");
+  if (!existsSync(worktreesDir)) {
+    await mkdir(worktreesDir, { recursive: true });
+  }
+  return worktreesDir;
 }

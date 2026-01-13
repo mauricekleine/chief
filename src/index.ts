@@ -27,18 +27,20 @@ const HELP_TEXT = codeBlock`
   Options:
     --help, -h           Show this help message
 
+  Notes:
+    Worktrees are stored in ~/.chief/{project-name}/worktrees/
+    Commands auto-detect the worktree when run from within one.
+    Use cd $(chief new) to create and cd into a new worktree.
+
   Examples:
-    chief new                  Start a new project (prompts for description)
-    chief new "build a REST API"  Start with prompt directly
-    chief tasks list           Show interactive picker for worktree tasks
-    chief tasks list my-feat   Show tasks for specific worktree
-    chief run                  Show interactive picker, then run tasks
-    chief run my-feature       Run tasks for specific worktree
-    chief run my-feature -s    Run tasks once interactively
-    chief worktrees            List all worktrees
-    chief cd                   Get path to worktree (interactive picker)
-    chief cd my-feature        Get path to specific worktree
-    chief clean                Clean up a worktree
+    cd $(chief new)            Create worktree and cd into it
+    chief new "build a REST API"  Create worktree with description
+    chief tasks list           Auto-detect worktree or show picker
+    chief run                  Auto-detect worktree or show picker
+    chief run -s               Run single task interactively
+    chief worktrees            List all worktrees for project
+    chief cd                   Get path to current/selected worktree
+    chief clean                Clean up current/selected worktree
 `;
 
 async function main(): Promise<void> {

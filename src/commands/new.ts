@@ -1,13 +1,14 @@
 import { copyFileSync, existsSync, readdirSync } from "node:fs";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 
 import { codeBlock } from "common-tags";
 
 import { runPlanMode, runPrint } from "../lib/claude";
 import {
   ensureChiefDir,
+  ensureGlobalWorktreesDir,
   ensureWorktreeChiefDir,
-  ensureWorktreesDir,
+  getProjectNameFromGitRoot,
 } from "../lib/config";
 import {
   ensureChiefInGitignore,
@@ -29,16 +30,19 @@ export async function newCommand(args: string[] = []): Promise<void> {
 
   const gitRoot = await getGitRoot();
   const currentBranch = await getCurrentBranch();
+  const projectName = getProjectNameFromGitRoot(gitRoot);
 
   // Ensure .chief is in .gitignore before creating worktree
   await ensureChiefInGitignore(gitRoot);
 
-  // Ensure .chief directory exists
-  const chiefDir = await ensureChiefDir(gitRoot);
-  const worktreesDir = await ensureWorktreesDir(chiefDir);
+  // Ensure local .chief directory exists (for schema and config)
+  const localChiefDir = await ensureChiefDir(gitRoot);
+
+  // Ensure global worktrees directory exists: ~/.chief/{project-name}/worktrees
+  const worktreesDir = await ensureGlobalWorktreesDir(projectName);
 
   // Write task schema if it doesn't exist
-  await writeTaskSchema(chiefDir);
+  await writeTaskSchema(localChiefDir);
 
   // Get description from CLI args or prompt interactively
   const cliPrompt = args.join(" ").trim();
@@ -54,7 +58,7 @@ export async function newCommand(args: string[] = []): Promise<void> {
   const hash = generateHash();
 
   // Step 1: Ask Claude to create the worktree with an appropriate name
-  console.log("\nCreating git worktree...");
+  console.error("\nCreating git worktree...");
   const worktreeResult = await runPrint(
     codeBlock`
       Based on this project description, create a git worktree with an appropriate short name (kebab-case, max 30 chars).
@@ -76,7 +80,7 @@ export async function newCommand(args: string[] = []): Promise<void> {
     throw new Error("Failed to create worktree. Please try again.");
   }
 
-  console.log(`Created worktree: ${worktreePath}`);
+  console.error(`Created worktree: ${worktreePath}`);
 
   // Ensure .chief is in .gitignore in the worktree (since the main repo change isn't committed yet)
   await ensureChiefInGitignore(worktreePath);
@@ -91,13 +95,13 @@ export async function newCommand(args: string[] = []): Promise<void> {
     copyFileSync(sourcePath, destPath);
   }
   if (envFiles.length > 0) {
-    console.log(`Copied ${envFiles.length} .env file(s) to worktree`);
+    console.error(`Copied ${envFiles.length} .env file(s) to worktree`);
   }
 
   // Ensure .chief directory exists within the worktree for plan and tasks
   const worktreeChiefDir = await ensureWorktreeChiefDir(worktreePath);
   const planPath = join(worktreeChiefDir, "plan.md");
-  const mainTasksSchemaPath = join(chiefDir, "tasks.schema.json");
+  const mainTasksSchemaPath = join(localChiefDir, "tasks.schema.json");
   const worktreeTasksSchemaPath = join(worktreeChiefDir, "tasks.schema.json");
   const tasksPath = join(worktreeChiefDir, "tasks.json");
 
@@ -105,7 +109,7 @@ export async function newCommand(args: string[] = []): Promise<void> {
   copyFileSync(mainTasksSchemaPath, worktreeTasksSchemaPath);
 
   // Copy verification.txt to worktree if it exists in main .chief
-  const mainVerificationPath = join(chiefDir, "verification.txt");
+  const mainVerificationPath = join(localChiefDir, "verification.txt");
   const worktreeVerificationPath = join(worktreeChiefDir, "verification.txt");
 
   if (existsSync(mainVerificationPath)) {
@@ -124,13 +128,13 @@ export async function newCommand(args: string[] = []): Promise<void> {
     If you're unable to exit the session, instruct the user to press Ctrl+C twice to exit the session and continue with the plan.
   `;
 
-  console.log("\nStarting planning session with Claude...");
-  console.log("(Exit the session when you're done planning)\n");
+  console.error("\nStarting planning session with Claude...");
+  console.error("(Exit the session when you're done planning)\n");
 
   await runPlanMode(planPrompt, { chrome: true, cwd: worktreePath });
 
   // Step 3: Convert plan to tasks
-  console.log("\nConverting plan to tasks...");
+  console.error("\nConverting plan to tasks...");
   await runPrint(
     codeBlock`
       Read the plan from "${planPath}" and convert it into a series of tasks according to the JSON schema in "${worktreeTasksSchemaPath}".
@@ -139,11 +143,11 @@ export async function newCommand(args: string[] = []): Promise<void> {
     { cwd: worktreePath, model: "sonnet" },
   );
 
-  const worktreeName = basename(worktreePath);
+  console.error("\n✓ Tasks created successfully!");
+  console.error(`  Worktree: ${worktreePath}`);
+  console.error("\nTo enter the worktree, run:");
+  console.error("  cd $(chief new)");
 
-  console.log("\n✓ Tasks created successfully!");
-  console.log(`  Worktree: ${worktreePath}`);
-  console.log("\nNext steps:");
-  console.log(`  chief tasks list ${worktreeName}  - View the tasks`);
-  console.log(`  chief run ${worktreeName}         - Start working on tasks`);
+  // Output the path to stdout for cd $(chief new) usage
+  console.log(worktreePath);
 }

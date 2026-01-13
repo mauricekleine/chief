@@ -1,8 +1,11 @@
 import { existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { $ } from "bun";
+
+import { getGlobalChiefDir } from "./config";
 
 /**
  * Check if the current directory is a git repository.
@@ -42,12 +45,13 @@ export async function removeWorktree(worktreePath: string): Promise<void> {
 }
 
 /**
- * List all worktrees in .chief/worktrees/
+ * List all worktrees in ~/.chief/{project-name}/worktrees/
  */
 export async function listWorktreeDirectories(
-  chiefDir: string,
+  projectName: string,
 ): Promise<{ createdAt: Date; name: string; path: string }[]> {
-  const worktreesDir = join(chiefDir, "worktrees");
+  const globalChiefDir = getGlobalChiefDir(projectName);
+  const worktreesDir = join(globalChiefDir, "worktrees");
 
   if (!existsSync(worktreesDir)) {
     return [];
@@ -71,6 +75,48 @@ export async function listWorktreeDirectories(
   return worktrees.toSorted(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
+}
+
+/**
+ * Detect if CWD is inside a chief-managed worktree.
+ * Returns worktree info if found, null otherwise.
+ */
+export function detectWorktreeFromCwd(): {
+  projectName: string;
+  worktreeName: string;
+  worktreePath: string;
+} | null {
+  const cwd = process.cwd();
+  const chiefBaseDir = join(homedir(), ".chief");
+
+  if (cwd.startsWith(chiefBaseDir)) {
+    const relativePath = cwd.slice(chiefBaseDir.length + 1);
+    const parts = relativePath.split("/");
+
+    // Expected: {project-name}/worktrees/{worktree-name}/...
+    const projectName = parts[0];
+    const worktreeName = parts[2];
+
+    if (
+      parts.length >= 3 &&
+      parts[1] === "worktrees" &&
+      projectName &&
+      worktreeName
+    ) {
+      const worktreePath = join(
+        chiefBaseDir,
+        projectName,
+        "worktrees",
+        worktreeName,
+      );
+
+      if (existsSync(worktreePath)) {
+        return { projectName, worktreeName, worktreePath };
+      }
+    }
+  }
+
+  return null;
 }
 
 /**

@@ -4,8 +4,12 @@ import { basename, join } from "node:path";
 import { codeBlock } from "common-tags";
 
 import { runPrint } from "../lib/claude";
-import { ensureChiefDir, ensureWorktreeChiefDir } from "../lib/config";
-import { getGitRoot, isGitRepo } from "../lib/git";
+import {
+  ensureWorktreeChiefDir,
+  getGlobalChiefDir,
+  getProjectNameFromGitRoot,
+} from "../lib/config";
+import { detectWorktreeFromCwd, getGitRoot, isGitRepo } from "../lib/git";
 import { selectWorktree } from "../lib/prompts";
 import { getTaskStats, readTasks } from "../lib/tasks";
 
@@ -19,10 +23,13 @@ const TASKS_HELP = codeBlock`
     list [name]          List tasks in a worktree
     create [name]        Create tasks for a worktree
 
+  Notes:
+    When run from inside a worktree, the worktree is auto-detected.
+
   Examples:
-    chief tasks list              Interactive picker to select worktree
+    chief tasks list              Auto-detect worktree or show picker
     chief tasks list my-feature   Show tasks for 'my-feature' worktree
-    chief tasks create            Interactive picker to select worktree
+    chief tasks create            Auto-detect worktree or show picker
     chief tasks create my-feature Create tasks for 'my-feature' worktree
 `;
 
@@ -54,32 +61,42 @@ export async function tasksCommand(args: string[]): Promise<void> {
 }
 
 async function listSubcommand(worktreeArg?: string): Promise<void> {
-  // Check if we're in a git repo
-  if (!(await isGitRepo())) {
-    throw new Error(
-      "Not in a git repository. Please run from within a git repo.",
-    );
-  }
-
-  const gitRoot = await getGitRoot();
-  const chiefDir = await ensureChiefDir(gitRoot);
-
   let worktreePath: string | null;
 
-  if (worktreeArg) {
-    // Validate worktree exists
-    worktreePath = join(chiefDir, "worktrees", worktreeArg);
-    if (!existsSync(worktreePath)) {
-      throw new Error(`Worktree not found: ${worktreeArg}`);
-    }
-  } else {
-    // Interactive picker
-    worktreePath = await selectWorktree(chiefDir, {
-      message: "Select a worktree to list tasks:",
-    });
+  // Try to auto-detect worktree from CWD
+  const detected = detectWorktreeFromCwd();
 
-    if (!worktreePath) {
-      return;
+  if (detected && !worktreeArg) {
+    // Use detected worktree
+    worktreePath = detected.worktreePath;
+    console.log(`Using detected worktree: ${detected.worktreeName}`);
+  } else {
+    // Fall back to original logic - require git repo
+    if (!(await isGitRepo())) {
+      throw new Error(
+        "Not in a git repository or chief worktree. Please run from within a git repo or worktree.",
+      );
+    }
+
+    const gitRoot = await getGitRoot();
+    const projectName = getProjectNameFromGitRoot(gitRoot);
+    const globalChiefDir = getGlobalChiefDir(projectName);
+
+    if (worktreeArg) {
+      // Validate worktree exists
+      worktreePath = join(globalChiefDir, "worktrees", worktreeArg);
+      if (!existsSync(worktreePath)) {
+        throw new Error(`Worktree not found: ${worktreeArg}`);
+      }
+    } else {
+      // Interactive picker
+      worktreePath = await selectWorktree(projectName, {
+        message: "Select a worktree to list tasks:",
+      });
+
+      if (!worktreePath) {
+        return;
+      }
     }
   }
 
@@ -130,39 +147,51 @@ async function listSubcommand(worktreeArg?: string): Promise<void> {
   console.log(`\n${stats.total - stats.completed} tasks remaining`);
 
   if (stats.completed < stats.total) {
-    console.log(`\nRun \`chief run ${worktreeName}\` to start working on tasks.`);
+    console.log(
+      `\nRun \`chief run ${worktreeName}\` to start working on tasks.`,
+    );
   } else {
     console.log("\nAll tasks completed! Run `chief clean` to clean up.");
   }
 }
 
 async function createSubcommand(worktreeArg?: string): Promise<void> {
-  // Check if we're in a git repo
-  if (!(await isGitRepo())) {
-    throw new Error(
-      "Not in a git repository. Please run from within a git repo.",
-    );
-  }
-
-  const gitRoot = await getGitRoot();
-  const chiefDir = await ensureChiefDir(gitRoot);
-
   let worktreePath: string | null;
 
-  if (worktreeArg) {
-    // Validate worktree exists
-    worktreePath = join(chiefDir, "worktrees", worktreeArg);
-    if (!existsSync(worktreePath)) {
-      throw new Error(`Worktree not found: ${worktreeArg}`);
-    }
-  } else {
-    // Interactive picker
-    worktreePath = await selectWorktree(chiefDir, {
-      message: "Select a worktree to create tasks:",
-    });
+  // Try to auto-detect worktree from CWD
+  const detected = detectWorktreeFromCwd();
 
-    if (!worktreePath) {
-      return;
+  if (detected && !worktreeArg) {
+    // Use detected worktree
+    worktreePath = detected.worktreePath;
+    console.log(`Using detected worktree: ${detected.worktreeName}`);
+  } else {
+    // Fall back to original logic - require git repo
+    if (!(await isGitRepo())) {
+      throw new Error(
+        "Not in a git repository or chief worktree. Please run from within a git repo or worktree.",
+      );
+    }
+
+    const gitRoot = await getGitRoot();
+    const projectName = getProjectNameFromGitRoot(gitRoot);
+    const globalChiefDir = getGlobalChiefDir(projectName);
+
+    if (worktreeArg) {
+      // Validate worktree exists
+      worktreePath = join(globalChiefDir, "worktrees", worktreeArg);
+      if (!existsSync(worktreePath)) {
+        throw new Error(`Worktree not found: ${worktreeArg}`);
+      }
+    } else {
+      // Interactive picker
+      worktreePath = await selectWorktree(projectName, {
+        message: "Select a worktree to create tasks:",
+      });
+
+      if (!worktreePath) {
+        return;
+      }
     }
   }
 
