@@ -15,6 +15,5 @@
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnPaste": true,
-  "editor.formatOnSave": true,
-  "typescript.experimental.useTsgo": true
+  "editor.formatOnSave": true
 }

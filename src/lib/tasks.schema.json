@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "items": {
+    "additionalProperties": false,
+    "properties": {
+      "category": {
+        "description": "The category of the task",
+        "type": "string"
+      },
+      "description": {
+        "description": "A detailed description of the task",
+        "type": "string"
+      },
+      "passes": {
+        "default": false,
+        "description": "Indicates if the task has passed or is completed",
+        "type": "boolean"
+      },
+      "steps": {
+        "description": "A list of steps to complete the task",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": ["category", "description", "passes", "steps"],
+    "type": "object"
+  },
+  "title": "Tasks",
+  "type": "array"
+}

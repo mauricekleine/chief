@@ -6,6 +6,7 @@
       "name": "chief",
       "dependencies": {
         "@inquirer/prompts": "^8.1.0",
+        "commander": "^14.0.2",
         "common-tags": "^1.8.2",
       },
       "devDependencies": {

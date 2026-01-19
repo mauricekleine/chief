@@ -1,11 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 
-import type { ChiefConfig } from "../types";
-
-const CONFIG_FILE = "config.json";
 const VERIFICATION_FILE = "verification.txt";
 
 /**
@@ -20,52 +16,25 @@ export async function ensureChiefDir(gitRoot: string): Promise<string> {
 }
 
 /**
- * Ensure the .chief/worktrees directory exists.
+ * Ensure the .chief/plans directory exists.
  */
-export async function ensureWorktreesDir(chiefDir: string): Promise<string> {
-  const worktreesDir = join(chiefDir, "worktrees");
-  if (!existsSync(worktreesDir)) {
-    await mkdir(worktreesDir, { recursive: true });
+export async function ensurePlansDir(chiefDir: string): Promise<string> {
+  const plansDir = join(chiefDir, "plans");
+  if (!existsSync(plansDir)) {
+    await mkdir(plansDir, { recursive: true });
   }
-  return worktreesDir;
+  return plansDir;
 }
 
 /**
- * Ensure the .chief directory exists within a worktree.
+ * Ensure the .chief/tasks directory exists.
  */
-export async function ensureWorktreeChiefDir(
-  worktreePath: string,
-): Promise<string> {
-  const chiefDir = join(worktreePath, ".chief");
-  if (!existsSync(chiefDir)) {
-    await mkdir(chiefDir, { recursive: true });
+export async function ensureTasksDir(chiefDir: string): Promise<string> {
+  const tasksDir = join(chiefDir, "tasks");
+  if (!existsSync(tasksDir)) {
+    await mkdir(tasksDir, { recursive: true });
   }
-  return chiefDir;
-}
-
-/**
- * Get the chief configuration.
- */
-export async function getConfig(chiefDir: string): Promise<ChiefConfig> {
-  const configPath = join(chiefDir, CONFIG_FILE);
-
-  if (!existsSync(configPath)) {
-    return {};
-  }
-
-  const content = await readFile(configPath, "utf8");
-  return JSON.parse(content) as ChiefConfig;
-}
-
-/**
- * Save the chief configuration.
- */
-export async function setConfig(
-  chiefDir: string,
-  config: ChiefConfig,
-): Promise<void> {
-  const configPath = join(chiefDir, CONFIG_FILE);
-  await writeFile(configPath, JSON.stringify(config, null, 2));
+  return tasksDir;
 }
 
 /**
@@ -93,45 +62,4 @@ export async function setVerificationSteps(
 ): Promise<void> {
   const verificationPath = join(chiefDir, VERIFICATION_FILE);
   await writeFile(verificationPath, steps);
-}
-
-/**
- * Extract project name from git root path (folder name).
- */
-export function getProjectNameFromGitRoot(gitRoot: string): string {
-  return basename(gitRoot);
-}
-
-/**
- * Get the global chief directory for a project: ~/.chief/{project-name}
- */
-export function getGlobalChiefDir(projectName: string): string {
-  return join(homedir(), ".chief", projectName);
-}
-
-/**
- * Ensure the global chief directory exists: ~/.chief/{project-name}
- */
-export async function ensureGlobalChiefDir(
-  projectName: string,
-): Promise<string> {
-  const globalDir = getGlobalChiefDir(projectName);
-  if (!existsSync(globalDir)) {
-    await mkdir(globalDir, { recursive: true });
-  }
-  return globalDir;
-}
-
-/**
- * Ensure the global worktrees directory exists: ~/.chief/{project-name}/worktrees
- */
-export async function ensureGlobalWorktreesDir(
-  projectName: string,
-): Promise<string> {
-  const globalDir = await ensureGlobalChiefDir(projectName);
-  const worktreesDir = join(globalDir, "worktrees");
-  if (!existsSync(worktreesDir)) {
-    await mkdir(worktreesDir, { recursive: true });
-  }
-  return worktreesDir;
 }

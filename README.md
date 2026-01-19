@@ -4,7 +4,7 @@
 
 CLI tool for running AI coding agents in a loop using the Ralph Wiggum methodology.
 
-Chief creates isolated git worktrees and uses Claude Code to plan and execute tasks autonomously, committing progress as it goes.
+Chief uses Claude Code to plan and execute tasks in your current repository, tracking plans and task files under `.chief/`.
 
 ## Requirements
 
@@ -29,109 +29,69 @@ alias chief="bun run /path/to/chief/src/index.ts"
 
 ## Usage
 
-### Create a new project
+### Plan a feature
 
 ```bash
-# Create and cd into new worktree
-cd $(chief new)
-
-# Or with a description
-cd $(chief new "build a REST API")
+chief plan
 ```
 
 This will:
 
-1. Prompt you to describe what you want to build (or use the provided description)
-2. Use Claude to create a git worktree with an appropriate name in `~/.chief/{project-name}/worktrees/`
-3. Start an interactive planning session with Claude
-4. Generate a `plan.md` with the implementation plan
-5. Convert the plan into `tasks.json` with structured tasks
-6. Output the worktree path for `cd` integration
+1. Prompt you to describe what you want to build (multiline)
+2. Start an interactive planning session with Claude
+3. Write the plan to `.chief/plans/YYYY-MM-DD-<feature-name>.md`
 
-### List tasks
+Use Enter for a new line and Cmd+Enter to submit.
 
-```bash
-# Auto-detects worktree when run from within one
-chief tasks list
-
-# Or specify worktree by name (from main repo)
-chief tasks list <worktree-name>
-```
-
-Shows all tasks for the selected worktree with their completion status.
-
-### Create tasks
+### Break down a plan
 
 ```bash
-# Auto-detects worktree when run from within one
-chief tasks create
+# Pick a plan from .chief/plans
+chief breakdown
 
-# Or specify worktree by name (from main repo)
-chief tasks create <worktree-name>
+# Or specify the feature name
+chief breakdown <feature-name>
+
+# Alias
+chief bd
 ```
 
-Creates tasks from an existing `plan.md` file in the selected worktree.
+Creates `.chief/tasks/YYYY-MM-DD-<feature-name>.tasks.json` from the plan.
 
 ### Run tasks
 
 ```bash
-# Auto-detects worktree when run from within one
+# Pick a task set from .chief/tasks
 chief run
 
-# Or specify worktree by name (from main repo)
-chief run <worktree-name>
+# Or specify the feature name
+chief run <feature-name>
 
 # Run once interactively
 chief run --single
 ```
 
-In loop mode, Chief will:
+Chief will:
 
-1. Find the next incomplete task
-2. Run Claude to complete it
+1. Check out a `feature/<feature-name>` branch
+2. Run Claude to complete tasks (loop mode by default)
 3. Verify the work using your configured verification steps
-4. Mark the task as done and commit
-5. Repeat until all tasks are complete
-6. Push changes and create a pull request
-
-### Manage worktrees
-
-```bash
-# List all worktrees for current project
-chief worktrees
-
-# Delete a worktree (auto-detects or prompts)
-chief clean
-
-# Or specify worktree by name
-chief clean <worktree-name>
-
-# Get path to worktree (for cd integration)
-cd $(chief cd)
-```
+4. Mark tasks as done and commit
+5. Push changes and create a pull request
 
 ## Configuration
 
-Chief uses two configuration locations:
+Chief uses a local `.chief/` directory in your repository:
 
-### Local config (`.chief/` in repository root)
+- `.chief/plans/` - Plans (`YYYY-MM-DD-<feature-name>.md`)
+- `.chief/tasks/` - Tasks (`YYYY-MM-DD-<feature-name>.tasks.json`)
+- `.chief/verification.txt` - Verification steps
 
-- `tasks.schema.json` - JSON schema for tasks
-- `verification.txt` - Verification steps template (copied to each worktree)
-
-### Global worktrees (`~/.chief/{project-name}/`)
-
-- `worktrees/` - Git worktrees for each project, stored globally to enable auto-detection
-
-Each worktree has its own `.chief/` directory containing:
-
-- `plan.md` - The implementation plan
-- `tasks.json` - Structured tasks for the worktree
-- `verification.txt` - Verification steps for this worktree
+Git-ignoring `.chief/` is optional.
 
 ### Verification Steps
 
-On first run, Chief will prompt you for verification steps. These are commands that Claude will use to verify its work:
+On first run, Chief will prompt you to pick verification steps based on `package.json` scripts, with an option to add custom steps.
 
 Example:
 
@@ -143,7 +103,7 @@ Example:
 
 ## Task Schema
 
-Tasks in `tasks.json` follow this structure:
+Tasks in `*.tasks.json` follow this structure:
 
 ```json
 [
@@ -164,7 +124,7 @@ Tasks in `tasks.json` follow this structure:
 
 Chief implements the Ralph Wiggum methodology:
 
-1. **Plan** - Use AI to create a detailed implementation plan through conversation
+1. **Plan** - Use AI to create a concise implementation plan through conversation
 2. **Break Down** - Convert the plan into discrete, verifiable tasks
 3. **Execute** - Run AI in a loop to complete tasks one at a time
 4. **Verify** - Use automated checks (tests, lint, typecheck) to verify work
