@@ -6,6 +6,8 @@ CLI tool for running AI coding agents in a loop using the Ralph Wiggum methodolo
 
 Chief uses Claude Code to plan and execute tasks in your current repository, tracking plans and task files under `.chief/`.
 
+Built by [Maurice Kleine](https://www.mauricekleine.com/). Chief is the ancestor of Hyperspeed, the agent fleet that later merged 468 PRs in 23 days. [Read how that works](https://www.mauricekleine.com/essays/my-agents-merged-468-prs).
+
 ## Requirements
 
 - [Bun](https://bun.sh/) runtime
