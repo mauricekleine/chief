@@ -44,7 +44,7 @@ function buildPrompt(
     3. When you're done with your task:
       - Update @${tasksPath} to mark the task as done by setting the 'passes' property to true.
       - Commit your changes to the repository.
-    4. If you learn a critical operational detail, update CLAUDE.md.
+    4. If you learn a critical operational detail, update AGENTS.md.
 
     IMPORTANT: Only work on one task at a time. NEVER make changes to @${tasksPath} - except to mark tasks as done by setting the 'passes' property to true.
   `;
