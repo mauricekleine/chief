@@ -1,5 +1,7 @@
 # Agent instructions
 
+Chief is kept for lineage and deploys nowhere: a merged PR is finished, with no deploy to verify.
+
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
